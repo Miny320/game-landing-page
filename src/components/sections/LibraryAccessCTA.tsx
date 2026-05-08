@@ -44,8 +44,12 @@ export default function LibraryAccessCTA() {
               </p>
 
               <div className="flex flex-wrap items-center gap-6 pt-4">
-                <Button size="lg" variant="primary" className="px-10 h-14 rounded-full">
-                  Subscribe Now →
+                <Button
+                  size="lg"
+                  variant="primary"
+                  className="starmap-login-button starmap-signup-button !w-[260px] !h-[52px] !text-base"
+                >
+                  <span className="whitespace-nowrap">Subscribe Now →</span>
                 </Button>
                 <div className="flex items-center gap-3 text-xs text-gray-500 font-bold uppercase tracking-widest">
                   <Layers className="w-4 h-4 text-cyan-accent" />

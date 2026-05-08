@@ -95,8 +95,12 @@ export default function FeaturedScripts() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-20 flex justify-center"
         >
-          <Button size="lg" variant="primary" className="px-16 h-16 rounded-full text-lg shadow-[0_0_30px_rgba(0,245,212,0.3)] hover:shadow-[0_0_50px_rgba(0,245,212,0.5)] transition-all">
-            Get Started with All Access
+          <Button
+            size="lg"
+            variant="primary"
+            className="starmap-login-button starmap-signup-button !w-[380px] !h-[56px] !text-xl"
+          >
+            <span className="whitespace-nowrap">Get Started with All Access</span>
           </Button>
         </motion.div>
       </div>

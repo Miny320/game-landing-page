@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { Button } from "../ui/Button";
 
 const FOLDER_CLIP =
   "polygon(0% 0%, 60% 0%, 64% 5%, 100% 5%, 100% 100%, 0% 100%)" as const;
@@ -122,13 +122,12 @@ export default function Hero() {
                 Get Access to the best scripts for every game.
               </p>
 
-              <Link
-                href="#store"
-                className="inline-flex items-center gap-3 rounded-none border border-cyan-accent bg-cyan-accent px-10 py-4 font-rajdhani text-lg font-bold tracking-tight text-background shadow-[0_3px_28px_rgba(0,245,212,0.42)] transition-all duration-300 hover:bg-cyan-glow hover:border-cyan-glow hover:shadow-[0_6px_34px_rgba(0,245,212,0.5)] sm:px-12"
-              >
-                Shop Scripts
-                <ArrowRight className="h-6 w-6 shrink-0" strokeWidth={2.4} aria-hidden />
+              <Link href="/auth">
+                <Button variant="accentFill" size="sm" className="starmap-login-button starmap-signup-button">
+                  Shop Scripts
+                </Button>
               </Link>
+
               </div>
             </div>
           </motion.div>

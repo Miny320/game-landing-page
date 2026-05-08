@@ -98,7 +98,14 @@ export default function AuthPage() {
               </div>
             )}
 
-            <Button variant="primary" className="w-full h-14 group">
+            <Button
+              variant="primary"
+              className={`w-full h-14 group ${
+                mode === "login"
+                  ? "bg-[url('/button_bg.png')] bg-cover bg-center bg-no-repeat !border-cyan-accent/80 hover:brightness-110"
+                  : ""
+              }`}
+            >
               {mode === "login" ? "Access Dashboard" : "Register Now"}
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>

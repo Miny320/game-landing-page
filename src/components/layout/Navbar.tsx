@@ -74,13 +74,13 @@ export default function Navbar() {
               <Button
                 variant="accentOutline"
                 size="sm"
-                className="!bg-transparent !text-cyan-accent !border-cyan-accent hover:!bg-cyan-accent/10 hover:!text-cyan-accent hover:!border-cyan-accent"
+                className="starmap-login-button"
               >
                 Log In
               </Button>
             </Link>
             <Link href="/auth">
-              <Button variant="accentFill" size="sm">
+              <Button variant="accentFill" size="sm" className="starmap-login-button starmap-signup-button">
                 Sign Up
               </Button>
             </Link>
@@ -123,11 +123,11 @@ export default function Navbar() {
               <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
                 <Button
                   variant="accentOutline"
-                  className="w-full h-14 text-lg !bg-transparent !text-cyan-accent !border-cyan-accent hover:!bg-cyan-accent/10 hover:!text-cyan-accent hover:!border-cyan-accent"
+                  className="starmap-login-button starmap-login-button-mobile text-lg"
                 >
                   Log In
                 </Button>
-                <Button variant="accentFill" className="w-full h-14 text-lg">
+                <Button variant="accentFill" className="starmap-login-button starmap-login-button-mobile starmap-signup-button text-lg">
                   Sign Up
                 </Button>
               </div>

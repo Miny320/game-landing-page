@@ -53,15 +53,19 @@ export default function FinalCTA() {
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-8">
-            <Button size="lg" variant="accentFill" className="px-12 h-16 text-lg font-bold">
-              Get Started Now
+            <Button
+              size="lg"
+              variant="accentFill"
+              className="starmap-login-button starmap-signup-button !w-[260px] !h-[52px] !text-lg"
+            >
+              <span className="whitespace-nowrap">Get Started Now</span>
             </Button>
             <Button
               size="lg"
               variant="accentOutline"
-              className="px-12 h-16 text-lg font-bold !bg-transparent !text-cyan-accent !border-cyan-accent hover:!bg-cyan-accent/10 hover:!text-cyan-accent hover:!border-cyan-accent"
+              className="starmap-login-button !w-[260px] !h-[52px] !text-lg"
             >
-              Join Discord
+              <span className="whitespace-nowrap">Join Discord</span>
             </Button>
           </div>
           
