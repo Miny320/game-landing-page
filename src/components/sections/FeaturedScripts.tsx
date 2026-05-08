@@ -18,6 +18,9 @@ const games = [
   { name: "Black Ops 7", image: "/visuals/blackops.png", position: "object-center" },
 ];
 
+const CARD_CLIP =
+  "polygon(16% 0%, 84% 0%, 100% 14%, 100% 86%, 84% 100%, 16% 100%, 0% 86%, 0% 14%)";
+
 export default function FeaturedScripts() {
   return (
     <SectionWrapper id="scripts" className="py-32">
@@ -53,8 +56,14 @@ export default function FeaturedScripts() {
               whileHover={{ y: -10, scale: 1.02 }}
               className="relative group cursor-pointer"
             >
-              <div className="absolute -inset-0.5 bg-gradient-to-b from-cyan-accent/20 to-transparent rounded-none opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
-              <Card className="p-0 overflow-hidden bg-card-bg/40 backdrop-blur-xl border-white/5 group-hover:border-cyan-accent/40 aspect-[4/5] relative transition-all duration-500">
+              <div className="absolute -inset-1 bg-cyan-accent/20 opacity-0 group-hover:opacity-100 transition-opacity blur-lg" />
+              <Card
+                className="p-0 overflow-hidden bg-card-bg/45 backdrop-blur-xl border-transparent aspect-[320/414] relative transition-all duration-500"
+                style={{ clipPath: CARD_CLIP, WebkitClipPath: CARD_CLIP }}
+              >
+                {/* Cyan frame from provided SVG */}
+                <div className="absolute inset-0 z-20 pointer-events-none bg-[url('/card.svg')] bg-contain bg-center bg-no-repeat opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+
                 {/* Character Image */}
                 <div className="absolute inset-0 z-0">
                   <img 
@@ -63,7 +72,7 @@ export default function FeaturedScripts() {
                     className={`w-full h-full object-cover ${game.position} opacity-40 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 grayscale-[100%] group-hover:grayscale-0`}
                   />
                   {/* Overlay Gradients */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/25 to-transparent opacity-85" />
                   <div className="absolute inset-0 bg-gradient-to-b from-cyan-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
 
