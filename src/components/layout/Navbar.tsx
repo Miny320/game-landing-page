@@ -4,7 +4,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { DiscordJoinButton } from "../ui/DiscordJoinButton";
+import { DiscordHeaderProfile } from "../ui/DiscordHeaderProfile";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -16,6 +18,7 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const { data: session, status } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -70,13 +73,28 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-4">
-            <DiscordJoinButton
-              href="/api/auth/signin/discord"
-              size="nav"
-              variant="outline"
-            >
-              Join Discord
-            </DiscordJoinButton>
+            {status === "loading" ? (
+              <div
+                className="h-[46px] min-w-[7rem] w-36 animate-pulse discord-profile-tag-clip border border-[color:var(--discord-profile-neon)]/25 bg-black/40"
+                aria-hidden
+              />
+            ) : session?.user ? (
+              <DiscordHeaderProfile
+                variant="nav"
+                user={{
+                  name: session.user.name,
+                  image: session.user.image,
+                }}
+              />
+            ) : (
+              <DiscordJoinButton
+                href="/api/auth/signin/discord"
+                size="nav"
+                variant="outline"
+              >
+                Join Discord
+              </DiscordJoinButton>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -114,14 +132,30 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
-                <DiscordJoinButton
-                  href="/api/auth/signin/discord"
-                  size="mobile"
-                  variant="outline"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Join Discord
-                </DiscordJoinButton>
+                {status === "loading" ? (
+                  <div
+                    className="h-14 w-full animate-pulse discord-profile-tag-clip border border-[color:var(--discord-profile-neon)]/25 bg-black/40"
+                    aria-hidden
+                  />
+                ) : session?.user ? (
+                  <DiscordHeaderProfile
+                    variant="mobile"
+                    user={{
+                      name: session.user.name,
+                      image: session.user.image,
+                    }}
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                ) : (
+                  <DiscordJoinButton
+                    href="/api/auth/signin/discord"
+                    size="mobile"
+                    variant="outline"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Join Discord
+                  </DiscordJoinButton>
+                )}
               </div>
             </div>
           </motion.div>

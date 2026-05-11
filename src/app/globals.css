@@ -34,12 +34,24 @@
 }
 
 @layer base {
+  :root {
+    /* Header Discord profile tag — matches cyber “double neon” reference */
+    --discord-profile-neon: #00fbff;
+    --discord-profile-bg: #020203;
+    --discord-profile-gap: #050508;
+  }
+
   body {
     color: white;
     background-color: #050816;
     font-family: var(--font-sans);
     overflow-x: hidden;
   }
+}
+
+/* Left-pointed tag (arrow / chevron on leading edge) */
+.discord-profile-tag-clip {
+  clip-path: polygon(0 50%, 13px 0, 100% 0, 100% 100%, 13px 100%);
 }
 
 /* Custom Scrollbar */
