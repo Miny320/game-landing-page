@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { Button } from "../ui/Button";
+import { DiscordJoinButton } from "../ui/DiscordJoinButton";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -70,20 +70,13 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/auth">
-              <Button
-                variant="accentOutline"
-                size="sm"
-                className="starmap-login-button"
-              >
-                Log In
-              </Button>
-            </Link>
-            <Link href="/auth">
-              <Button variant="accentFill" size="sm" className="starmap-login-button starmap-signup-button">
-                Sign Up
-              </Button>
-            </Link>
+            <DiscordJoinButton
+              href="/api/auth/signin/discord"
+              size="nav"
+              variant="outline"
+            >
+              Join Discord
+            </DiscordJoinButton>
           </div>
 
           {/* Mobile Menu Button */}
@@ -121,15 +114,14 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
-                <Button
-                  variant="accentOutline"
-                  className="starmap-login-button starmap-login-button-mobile text-lg"
+                <DiscordJoinButton
+                  href="/api/auth/signin/discord"
+                  size="mobile"
+                  variant="outline"
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Log In
-                </Button>
-                <Button variant="accentFill" className="starmap-login-button starmap-login-button-mobile starmap-signup-button text-lg">
-                  Sign Up
-                </Button>
+                  Join Discord
+                </DiscordJoinButton>
               </div>
             </div>
           </motion.div>

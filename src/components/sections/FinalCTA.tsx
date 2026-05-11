@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { SectionWrapper } from "../ui/SectionWrapper";
 import { Button } from "../ui/Button";
+import { DiscordJoinButton } from "../ui/DiscordJoinButton";
 
 interface Particle {
   id: number;
@@ -11,6 +12,9 @@ interface Particle {
   y: string;
   duration: number;
 }
+
+const discordCtaHref =
+  process.env.NEXT_PUBLIC_DISCORD_INVITE_URL ?? "/api/auth/signin/discord";
 
 export default function FinalCTA() {
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -60,13 +64,9 @@ export default function FinalCTA() {
             >
               <span className="whitespace-nowrap">Get Started Now</span>
             </Button>
-            <Button
-              size="lg"
-              variant="accentOutline"
-              className="starmap-login-button !w-[260px] !h-[52px] !text-lg"
-            >
-              <span className="whitespace-nowrap">Join Discord</span>
-            </Button>
+            <DiscordJoinButton href={discordCtaHref} size="lg" variant="outline">
+              Join Discord
+            </DiscordJoinButton>
           </div>
           
           <div className="flex items-center justify-center gap-8 pt-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">

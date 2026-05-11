@@ -4,6 +4,7 @@ import SmoothScroll from "@/components/layout/SmoothScroll";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ParticleBackground from "@/components/ui/ParticleBackground";
+import { AuthSessionProvider } from "@/components/providers/AuthSessionProvider";
 
 export const metadata: Metadata = {
   title: "Sigma Scripts | Premium Game Scripts",
@@ -31,11 +32,13 @@ export default function RootLayout({
         <div className="fixed inset-0 z-[-1] bg-noise"></div>
         <div className="fixed inset-0 z-[-3] bg-gradient-dark"></div>
         
-        <SmoothScroll>
-          <Navbar />
-          <main className="flex-grow">{children}</main>
-          <Footer />
-        </SmoothScroll>
+        <AuthSessionProvider>
+          <SmoothScroll>
+            <Navbar />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </SmoothScroll>
+        </AuthSessionProvider>
       </body>
     </html>
   );
