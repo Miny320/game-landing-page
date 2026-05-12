@@ -13,8 +13,9 @@ interface Particle {
   duration: number;
 }
 
-const discordCtaHref =
-  process.env.NEXT_PUBLIC_DISCORD_INVITE_URL ?? "/api/auth/signin/discord";
+const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim();
+const discordCtaHref = discordInvite || "/api/auth/signin/discord";
+const discordSecondaryLabel = discordInvite ? "Join our server" : "Sign in with Discord";
 
 export default function FinalCTA() {
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -65,7 +66,7 @@ export default function FinalCTA() {
               <span className="whitespace-nowrap">Get Started Now</span>
             </Button>
             <DiscordJoinButton href={discordCtaHref} size="lg" variant="outline">
-              Join Discord
+              {discordSecondaryLabel}
             </DiscordJoinButton>
           </div>
           

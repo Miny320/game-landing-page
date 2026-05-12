@@ -1,8 +1,9 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 import { cn } from "@/components/ui/Button";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, User } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /** Double neon rim + black fill inside a left-pointed tag (clip-path). */
@@ -36,6 +37,41 @@ const neonText =
 
 const interactiveBtn =
   "block cursor-pointer border-0 bg-transparent p-0 text-left transition-[filter,transform] duration-200 ease-out hover:[filter:drop-shadow(0_0_16px_rgba(0,251,255,0.5))] hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--discord-profile-neon)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--discord-profile-bg)]";
+
+/** Discord CDN often fails on hard refresh without `referrerPolicy="no-referrer"` (Vercel + browsers). */
+function DiscordAvatar({
+  imageUrl,
+  sizePx,
+}: {
+  imageUrl?: string | null;
+  sizePx: number;
+}) {
+  const [broken, setBroken] = useState(false);
+  useEffect(() => {
+    setBroken(false);
+  }, [imageUrl]);
+
+  if (imageUrl && !broken) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        width={sizePx}
+        height={sizePx}
+        className="size-full rounded-full object-cover"
+        referrerPolicy="no-referrer"
+        decoding="async"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+
+  return (
+    <span className="flex size-full items-center justify-center rounded-full bg-black/60 text-[color:var(--discord-profile-neon)]">
+      <User className="size-[55%]" strokeWidth={2.25} aria-hidden />
+    </span>
+  );
+}
 
 export type DiscordHeaderProfileProps = {
   variant: "nav" | "mobile";
@@ -86,29 +122,13 @@ export function DiscordHeaderProfile({
 
   const avatarNav = (
     <div className="relative shrink-0 size-[34px] overflow-hidden rounded-full bg-black/80 ring-1 ring-[color:var(--discord-profile-neon)]/35">
-      {image ? (
-        <img
-          src={image}
-          alt=""
-          width={34}
-          height={34}
-          className="size-full rounded-full object-cover"
-        />
-      ) : null}
+      <DiscordAvatar imageUrl={image} sizePx={34} />
     </div>
   );
 
   const avatarMobile = (
     <div className="relative shrink-0 size-11 overflow-hidden rounded-full bg-black/80 ring-1 ring-[color:var(--discord-profile-neon)]/35">
-      {image ? (
-        <img
-          src={image}
-          alt=""
-          width={44}
-          height={44}
-          className="size-full rounded-full object-cover"
-        />
-      ) : null}
+      <DiscordAvatar imageUrl={image} sizePx={44} />
     </div>
   );
 
@@ -117,6 +137,15 @@ export function DiscordHeaderProfile({
       role="menu"
       className="absolute right-0 top-[calc(100%+10px)] z-[100] min-w-[196px] border border-[color:var(--discord-profile-neon)]/45 bg-black/92 py-1 shadow-[0_0_32px_rgba(0,251,255,0.18),inset_0_0_0_1px_rgba(0,251,255,0.12)] backdrop-blur-md before:pointer-events-none before:absolute before:inset-0 before:shadow-[inset_0_0_20px_rgba(0,251,255,0.06)] before:content-['']"
     >
+      <Link
+        href="/dashboard"
+        role="menuitem"
+        onClick={() => setOpen(false)}
+        className="relative flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-rajdhani font-bold uppercase tracking-[0.18em] text-[color:var(--discord-profile-neon)] transition-colors hover:bg-[color:var(--discord-profile-neon)]/12"
+      >
+        <LayoutDashboard className="size-[15px] shrink-0 opacity-90" strokeWidth={2.25} aria-hidden />
+        Member hub
+      </Link>
       <button
         type="button"
         role="menuitem"
@@ -132,6 +161,14 @@ export function DiscordHeaderProfile({
   if (variant === "mobile") {
     return (
       <div className="flex w-full flex-col gap-3">
+        <Link
+          href="/dashboard"
+          onClick={() => onNavigate?.()}
+          className="discord-profile-tag-clip flex w-full items-center justify-center gap-2 border border-[color:var(--discord-profile-neon)]/55 bg-transparent py-3.5 text-[15px] font-rajdhani font-bold uppercase tracking-[0.2em] text-[color:var(--discord-profile-neon)] shadow-[inset_0_0_0_1px_rgba(0,251,255,0.08)] transition-[background,filter] hover:bg-[color:var(--discord-profile-neon)]/10 hover:[filter:drop-shadow(0_0_14px_rgba(0,251,255,0.35))]"
+        >
+          <LayoutDashboard className="size-5 shrink-0" strokeWidth={2.25} aria-hidden />
+          Member hub
+        </Link>
         <div className="pointer-events-none w-full">
           <NeonProfileTagShell className="w-full [&_.discord-profile-tag-clip:last-child]:min-h-[52px]">
             <span className="flex w-full min-w-0 items-center gap-3.5 px-3 py-3 pl-2">
