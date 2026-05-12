@@ -7,20 +7,23 @@ import { Menu, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { DiscordJoinButton } from "../ui/DiscordJoinButton";
 import { DiscordHeaderProfile } from "../ui/DiscordHeaderProfile";
+import { scrollToSection } from "@/lib/scroll";
 
 const navLinks = [
-  { name: "Home", href: "/" },
+  { name: "Home", href: "#top" },
   { name: "Store", href: "#store" },
   { name: "Scripts", href: "#scripts" },
+  { name: "Why Us", href: "#why-us" },
+  { name: "Showcase", href: "#showcase" },
   { name: "Reviews", href: "#reviews" },
-  { name: "Guides", href: "#guides" },
-  { name: "Support", href: "#support" },
+  { name: "FAQ", href: "#faq" },
 ];
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,26 +51,42 @@ export default function Navbar() {
             <div className={`relative transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) flex items-center justify-center group-hover:scale-110 ${
               isScrolled ? "w-10 h-10 sm:w-12 sm:h-12" : "w-12 h-12 sm:w-16 sm:h-16"
             }`}>
-              {/* Logo Image */}
-              <img
-                src="/logos/logo.png"
-                alt="Sigma Scripts"
-                className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,245,212,0.8)] z-10"
-              />
+              {!logoFailed ? (
+                <img
+                  src="/logos/logo.png"
+                  alt="Sigma Scripts"
+                  fetchPriority="high"
+                  decoding="async"
+                  className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,245,212,0.8)] z-10"
+                  onError={() => setLogoFailed(true)}
+                />
+              ) : (
+                <span
+                  className="flex h-full w-full items-center justify-center font-rajdhani text-lg font-black text-cyan-accent sm:text-xl"
+                  aria-hidden
+                >
+                  Σ
+                </span>
+              )}
             </div>
           </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-7 lg:gap-8">
             {navLinks.map((link) => (
-              <Link
+              <a
                 key={link.name}
                 href={link.href}
-                className="text-base lg:text-lg font-semibold text-gray-300 hover:text-white relative group"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection(link.href);
+                  history.replaceState(null, "", link.href === "#top" ? " " : link.href);
+                }}
+                className="text-base lg:text-lg font-semibold text-gray-300 hover:text-white relative group cursor-pointer"
               >
                 {link.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-accent transition-all duration-300 group-hover:w-full drop-shadow-[0_0_5px_rgba(0,245,212,0.8)]"></span>
-              </Link>
+              </a>
             ))}
           </nav>
 
@@ -92,7 +111,7 @@ export default function Navbar() {
                 size="nav"
                 variant="outline"
               >
-                Join Discord
+                Sign in with Discord
               </DiscordJoinButton>
             )}
           </div>
@@ -122,14 +141,19 @@ export default function Navbar() {
           >
             <div className="container mx-auto px-6 py-10 flex flex-col gap-6">
               {navLinks.map((link) => (
-                <Link
+                <a
                   key={link.name}
                   href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-2xl font-black text-gray-400 hover:text-cyan-accent transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    setTimeout(() => scrollToSection(link.href), 50);
+                    history.replaceState(null, "", link.href === "#top" ? " " : link.href);
+                  }}
+                  className="text-2xl font-black text-gray-400 hover:text-cyan-accent transition-colors cursor-pointer"
                 >
                   {link.name}
-                </Link>
+                </a>
               ))}
               <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
                 {status === "loading" ? (
@@ -153,7 +177,7 @@ export default function Navbar() {
                     variant="outline"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Join Discord
+                    Sign in with Discord
                   </DiscordJoinButton>
                 )}
               </div>

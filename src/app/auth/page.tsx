@@ -26,7 +26,8 @@ export default function AuthPage() {
             Sign in
           </h1>
           <p className="text-gray-500 text-sm mt-2">
-            Continue with your Discord account to access the script library
+            Continue with Discord — we will open your member hub next so you can confirm server access
+            and your paid role (no IDs to type).
           </p>
         </div>
 
@@ -37,12 +38,12 @@ export default function AuthPage() {
             variant="filled"
             className="!w-full max-w-[380px]"
           >
-            Join Discord
+            Sign in with Discord
           </DiscordJoinButton>
 
           <p className="mt-6 text-center text-[11px] text-gray-500 leading-relaxed">
-            We use Discord to verify your account. You will be asked to authorize this app in
-            Discord.
+            You will authorize this site on Discord. After signing in you will land on the member hub
+            to verify you are in the server and ready for the paid role when billing goes live.
           </p>
         </div>
 

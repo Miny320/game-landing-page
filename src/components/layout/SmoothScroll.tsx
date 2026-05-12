@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Lenis from "lenis";
+import "@/lib/scroll";
 
 export default function SmoothScroll({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -15,6 +16,8 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       touchMultiplier: 2,
     });
 
+    window.__lenis = lenis;
+
     function raf(time: number) {
       lenis.raf(time);
       requestAnimationFrame(raf);
@@ -24,6 +27,9 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
 
     return () => {
       lenis.destroy();
+      if (window.__lenis === lenis) {
+        delete window.__lenis;
+      }
     };
   }, []);
 
