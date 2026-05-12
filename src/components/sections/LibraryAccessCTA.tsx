@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import { SectionWrapper } from "../ui/SectionWrapper";
 import { Button } from "../ui/Button";
 import { Sparkles, Layers } from "lucide-react";
@@ -16,8 +18,10 @@ const scriptVisuals = [
 ];
 
 export default function LibraryAccessCTA() {
+  const { data: session } = useSession();
+
   return (
-    <SectionWrapper className="py-24 relative overflow-hidden bg-cyan-accent/[0.02]">
+    <SectionWrapper id="store" className="py-24 relative overflow-hidden bg-cyan-accent/[0.02]">
       {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-accent/5 rounded-full blur-[160px] pointer-events-none" />
 
@@ -43,18 +47,44 @@ export default function LibraryAccessCTA() {
                 Over <span className="text-white font-bold">200+ scripts</span> worth over <span className="text-white font-bold">$5,000</span> for only <span className="text-cyan-accent font-black">$29.99 a month</span> right now, with new scripts added regularly.
               </p>
 
-              <div className="flex flex-wrap items-center gap-6 pt-4">
-                <Button
-                  size="lg"
-                  variant="primary"
-                  className="starmap-login-button starmap-signup-button !w-[260px] !h-[52px] !text-base"
-                >
-                  <span className="whitespace-nowrap">Subscribe Now →</span>
-                </Button>
-                <div className="flex items-center gap-3 text-xs text-gray-500 font-bold uppercase tracking-widest">
-                  <Layers className="w-4 h-4 text-cyan-accent" />
-                  Instant Unlock
+              <div className="flex flex-col gap-4 pt-4">
+                <div className="flex flex-wrap items-center gap-6">
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    className="starmap-login-button starmap-signup-button !w-[260px] !h-[52px] !text-base opacity-80"
+                    disabled
+                  >
+                    <span className="whitespace-nowrap">Subscribe Now</span>
+                  </Button>
+                  <div className="flex items-center gap-3 text-xs text-gray-500 font-bold uppercase tracking-widest">
+                    <Layers className="w-4 h-4 text-cyan-accent" />
+                    Instant unlock when billing is live
+                  </div>
                 </div>
+                {session?.user ? (
+                  <p className="text-sm text-gray-400 leading-relaxed">
+                    Check your{" "}
+                    <Link
+                      href="/dashboard"
+                      className="font-bold text-cyan-accent underline-offset-4 hover:text-cyan-glow hover:underline"
+                    >
+                      member hub
+                    </Link>{" "}
+                    for Discord server status and the paid role. No Discord ID to paste — we use the
+                    account you signed in with.
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400 leading-relaxed">
+                    <Link
+                      href="/auth"
+                      className="font-bold text-cyan-accent underline-offset-4 hover:text-cyan-glow hover:underline"
+                    >
+                      Sign in with Discord
+                    </Link>{" "}
+                    first so subscriptions can attach to your account when checkout launches.
+                  </p>
+                )}
               </div>
             </div>
 

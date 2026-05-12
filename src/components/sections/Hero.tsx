@@ -21,7 +21,10 @@ export default function Hero() {
 
     const startVideo = () => {
       setVideoLoaded(true);
-      video.play().catch(console.error);
+      video.muted = true;
+      void video.play().catch(() => {
+        /* Autoplay is often blocked until a gesture; muted policy still rejects in some cases. */
+      });
     };
 
     if (video.readyState >= 4) {

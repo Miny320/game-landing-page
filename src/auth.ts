@@ -64,4 +64,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: discordSecret,
     }),
   ],
+  callbacks: {
+    async jwt({ token, user, account, profile }) {
+      if (account?.provider === "discord" && account.providerAccountId) {
+        token.discordId = account.providerAccountId;
+        try {
+          const { upsertUserOnDiscordSignIn } = await import("@/lib/user-db");
+          const p = profile as { global_name?: string; username?: string } | undefined;
+          await upsertUserOnDiscordSignIn({
+            discordId: account.providerAccountId,
+            name: user?.name ?? p?.global_name ?? p?.username,
+            image: user?.image,
+            email: user?.email,
+          });
+        } catch (e) {
+          console.error("[auth] Mongo upsert on sign-in failed:", e);
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token.discordId && typeof token.discordId === "string") {
+        session.user.discordId = token.discordId;
+      }
+      return session;
+    },
+  },
 });

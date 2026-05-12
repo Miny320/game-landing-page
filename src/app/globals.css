@@ -214,3 +214,29 @@ html.lenis {
   z-index: 2;
 }
 
+/* Member hub “SUBSCRIBE NOW” — hover: neon double-frame + cyan label (starmap PNG swap) */
+.member-hub-starmap-cta.starmap-signup-button {
+  transition:
+    filter 0.45s ease,
+    text-shadow 0.45s ease,
+    transform 0.25s ease;
+}
+
+.member-hub-starmap-cta.starmap-signup-button:hover:not(:disabled),
+.member-hub-starmap-cta.starmap-signup-button:focus-visible:not(:disabled),
+a.member-hub-starmap-cta.starmap-signup-button:hover,
+a.member-hub-starmap-cta.starmap-signup-button:focus-visible {
+  filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.75)) drop-shadow(0 0 14px rgba(0, 245, 212, 0.45))
+    drop-shadow(0 0 28px rgba(0, 245, 212, 0.22));
+  text-shadow:
+    0 0 10px rgba(0, 255, 255, 0.6),
+    0 0 22px rgba(0, 245, 212, 0.35);
+}
+
+.member-hub-starmap-cta.starmap-signup-button:hover:not(:disabled)::before,
+.member-hub-starmap-cta.starmap-signup-button:focus-visible:not(:disabled)::before,
+a.member-hub-starmap-cta.starmap-signup-button:hover::before,
+a.member-hub-starmap-cta.starmap-signup-button:focus-visible::before {
+  filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.5)) drop-shadow(0 0 14px rgba(0, 245, 212, 0.35));
+}
+
