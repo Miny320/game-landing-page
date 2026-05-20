@@ -8,14 +8,17 @@ import Showcase from "@/components/sections/Showcase";
 import Reviews from "@/components/sections/Reviews";
 import FAQ from "@/components/sections/FAQ";
 import FinalCTA from "@/components/sections/FinalCTA";
+import { getSubscriptionStatus } from "@/lib/subscription-status";
 
-export default function Home() {
+export default async function Home() {
+  const subscription = await getSubscriptionStatus();
+
   return (
     <>
       <Hero />
       <CommunityIntro />
       <TrustBar />
-      <LibraryAccessCTA />
+      <LibraryAccessCTA subscription={subscription} />
       <FeaturedScripts />
       <WhyChooseUs />
       <Showcase />

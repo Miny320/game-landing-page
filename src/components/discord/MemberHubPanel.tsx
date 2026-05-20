@@ -19,6 +19,7 @@ import {
   claimPaidRoleFromSubscribeButton,
   refreshDiscordHub,
 } from "@/actions/discord-hub";
+import { startOvgcCheckout } from "@/actions/ovgc-checkout";
 import type { DiscordAccessSnapshot } from "@/lib/discord-guild";
 
 const memberHubHexCtaClassName =
@@ -28,7 +29,9 @@ type Props = {
   userName?: string | null;
   snapshot: DiscordAccessSnapshot;
   inviteUrl: string | null;
-  /** When true, “Subscribe for full access” assigns the Paid User role (pre–Stripe). */
+  /** When true, Subscribe opens OVGC hosted checkout. */
+  ovgcCheckoutEnabled: boolean;
+  /** When true, “Subscribe for full access” assigns the Paid User role (dev / fallback). */
   manualSubscribeGrantEnabled: boolean;
   /** ISO end of current monthly period (httpOnly cookie; set on hub subscribe / renew). */
   subscriptionPeriodEndIso: string | null;
@@ -37,6 +40,7 @@ type Props = {
   paymentStatus: string | null;
   /** True when a User document exists for this Discord id. */
   accountPersisted: boolean;
+  billingSuccess?: boolean;
 };
 
 function StepRow({
@@ -71,11 +75,13 @@ export function MemberHubPanel({
   userName,
   snapshot,
   inviteUrl,
+  ovgcCheckoutEnabled,
   manualSubscribeGrantEnabled,
   subscriptionPeriodEndIso,
   subscriptionPeriodExpired,
   paymentStatus,
   accountPersisted,
+  billingSuccess,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -90,6 +96,29 @@ export function MemberHubPanel({
         return;
       }
       router.refresh();
+    });
+  };
+
+  const onOvgcCheckout = () => {
+    setErr(null);
+    startTransition(async () => {
+      const r = await startOvgcCheckout();
+      if (!r.ok) {
+        if (r.error === "missing_email") {
+          setErr(
+            r.message ??
+              "Discord did not provide an email. Enable email on your Discord account and sign in again."
+          );
+        } else if (r.error === "not_configured") {
+          setErr("Checkout is not configured on the server yet.");
+        } else if (r.error === "not_signed_in") {
+          setErr("Sign in again, then retry.");
+        } else {
+          setErr(r.message ?? "Could not start checkout. Try again in a moment.");
+        }
+        return;
+      }
+      window.location.href = r.checkoutUrl;
     });
   };
 
@@ -164,9 +193,13 @@ export function MemberHubPanel({
   const needsSubscribe = inGuild && !hasPaidRole;
   const canExtendMonthlyPeriod =
     hasPaidRole &&
-    manualSubscribeGrantEnabled &&
+    (ovgcCheckoutEnabled || manualSubscribeGrantEnabled) &&
     (!subscriptionPeriodEndIso || subscriptionPeriodExpired);
   const showSubscribePrimaryCta = needsSubscribe || canExtendMonthlyPeriod;
+  const useOvgcCheckout = ovgcCheckoutEnabled && showSubscribePrimaryCta;
+  const useManualGrant =
+    !ovgcCheckoutEnabled && manualSubscribeGrantEnabled && showSubscribePrimaryCta;
+  const onPrimarySubscribe = useOvgcCheckout ? onOvgcCheckout : onSubscribeForAccess;
 
   const periodEndDisplay = subscriptionPeriodEndIso
     ? new Date(subscriptionPeriodEndIso).toLocaleDateString(undefined, {
@@ -182,9 +215,11 @@ export function MemberHubPanel({
           ? `Paid User role is active. Your tracked monthly period ended on ${periodEndDisplay}. Use Extend monthly access on this page when available, or use checkout when live.`
           : `You have the Paid User role. Current monthly access is tracked until ${periodEndDisplay}.`
         : "You have the Paid User role. Full library access is tied to this subscription. Period dates appear after you use the hub subscribe flow (or when checkout is connected)."
-      : manualSubscribeGrantEnabled
-        ? "You are in the server. Use Subscribe now in the Next step card to receive the Paid User role in Discord right away (until checkout replaces this flow)."
-        : "You are in the server. Complete checkout on the store when it is live — the Paid User role will be applied automatically to this Discord account.";
+      : ovgcCheckoutEnabled
+        ? "You are in the server. Browse free scripts below or upgrade for Ultimate — paid access uses OVGC checkout and adds the Paid User role."
+        : manualSubscribeGrantEnabled
+          ? "You are in the server. Browse free scripts below or upgrade for Ultimate (dev mode can assign the paid role without payment)."
+          : "You are in the server. Browse free scripts below or upgrade when billing is enabled.";
 
   return (
     <motion.div
@@ -195,6 +230,12 @@ export function MemberHubPanel({
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-cyan-accent/[0.07] via-transparent to-transparent" />
       <div className="relative p-8 md:p-12">
+        {billingSuccess ? (
+          <div className="mb-8 rounded-none border border-cyan-accent/35 bg-cyan-accent/10 px-5 py-4 text-sm text-cyan-50/95">
+            Payment confirmed. Your Paid User role and monthly access should be active — refresh
+            below if Discord still looks out of date.
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <div className="inline-flex items-center gap-2 border border-cyan-accent/25 bg-cyan-accent/10 px-3 py-1.5">
@@ -244,7 +285,7 @@ export function MemberHubPanel({
           />
           <StepRow
             done={hasPaidRole}
-            label="Subscribe & Paid User role"
+            label="Free or paid access"
             description={paidStepDescription}
           />
         </div>
@@ -252,74 +293,21 @@ export function MemberHubPanel({
         {needsSubscribe ? (
           <div className="mt-10 rounded-none border border-cyan-accent/30 bg-cyan-accent/[0.06] p-6 md:p-8">
             <p className="font-rajdhani text-xs font-black uppercase tracking-[0.2em] text-cyan-accent">
-              Next step
+              Upgrade available
             </p>
             <h2 className="mt-2 font-rajdhani text-xl font-bold text-white md:text-2xl">
-              Subscribe for full script access
+              Want the full Ultimate library?
             </h2>
-            <div className="mt-6 rounded-none border border-white/10 bg-black/35 p-5 md:p-6">
-              <p className="font-rajdhani text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                Pricing
-              </p>
-              <p className="mt-2 font-rajdhani text-4xl font-black tracking-tight text-cyan-accent md:text-5xl">
-                $29.99
-                <span className="ml-1.5 align-baseline text-xl font-bold text-gray-400 md:text-2xl">
-                  / month
-                </span>
-              </p>
-              <p className="mt-4 max-w-2xl text-base text-gray-400 leading-relaxed md:text-lg">
-                Over <span className="font-bold text-white">200+ scripts</span> worth over{" "}
-                <span className="font-bold text-white line-through decoration-white/50">$5,000</span>{" "}
-                for only{" "}
-                <span className="font-black text-cyan-accent">$29.99 a month</span> right now, with
-                new scripts added regularly — same offer as the{" "}
-                <Link href="/#store" className="font-bold text-cyan-accent underline-offset-4 hover:underline">
-                  store section
-                </Link>{" "}
-                on the homepage.
-              </p>
-            </div>
-
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
-              {manualSubscribeGrantEnabled ? (
-                <button
-                  type="button"
-                  onClick={onSubscribeForAccess}
-                  disabled={pending}
-                  className={memberHubHexCtaClassName}
-                >
-                  {pending ? (
-                    <Loader2
-                      className="size-5 animate-spin text-[#0b0b0b] group-hover:text-[#00ffff]"
-                      aria-hidden
-                    />
-                  ) : (
-                    <span className="whitespace-nowrap">SUBSCRIBE NOW</span>
-                  )}
-                </button>
-              ) : (
-                <Link href="/#store" className={`${memberHubHexCtaClassName} cursor-pointer no-underline`}>
-                  <span className="whitespace-nowrap">SUBSCRIBE NOW</span>
-                </Link>
-              )}
-            </div>
-
-            <p className="mt-4 max-w-2xl text-sm text-gray-300 leading-relaxed">
-              {manualSubscribeGrantEnabled ? (
-                <>
-                  You are already in the Discord server.{" "}
-                  <strong className="text-white">Subscribe now</strong> assigns the{" "}
-                  <strong className="text-white">Paid User</strong> role to this same Discord account
-                  — no checkout yet, nothing to paste.
-                </>
-              ) : (
-                <>
-                  You are in the server. When checkout is enabled, subscribe on the store for the
-                  plan above and the <strong className="text-white">Paid User</strong> role will be
-                  applied automatically to this Discord account.
-                </>
-              )}
+            <p className="mt-3 max-w-xl text-sm text-gray-400 leading-relaxed">
+              Free scripts are unlocked with Discord sign-in. For paid access and the Paid User role,
+              use the store section on the homepage.
             </p>
+            <Link
+              href="/#store"
+              className={`${memberHubHexCtaClassName} mt-6 inline-flex !w-auto max-w-xs no-underline`}
+            >
+              <span className="whitespace-nowrap">Go to store</span>
+            </Link>
           </div>
         ) : hasPaidRole ? (
           <div className="mt-10 rounded-none border border-cyan-accent/25 bg-cyan-accent/10 p-6 md:p-8">
@@ -366,7 +354,7 @@ export function MemberHubPanel({
             <>
               <button
                 type="button"
-                onClick={onSubscribeForAccess}
+                onClick={onPrimarySubscribe}
                 disabled={pending}
                 className="inline-flex items-center justify-center gap-2 border border-cyan-accent bg-cyan-accent px-6 py-3.5 font-rajdhani text-sm font-bold uppercase tracking-widest text-background transition hover:bg-cyan-glow hover:border-cyan-glow disabled:opacity-60"
               >

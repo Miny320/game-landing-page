@@ -7,7 +7,10 @@ import { signInWithDiscord } from "@/actions/auth";
 
 function isDiscordOAuthHref(href: string) {
   if (href.startsWith("http://") || href.startsWith("https://")) return false;
-  return href.includes("/signin/discord");
+  return (
+    href.includes("/signin/discord") ||
+    href.includes("/api/auth/discord")
+  );
 }
 
 /** Underlying layer — same as `<Button variant="accentFill" | "accentOutline" />` (starmap PNGs sit on top). */

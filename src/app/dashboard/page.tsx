@@ -6,13 +6,19 @@ import {
   getDiscordInviteUrl,
   isManualSubscribeGrantEnabled,
 } from "@/lib/discord-config";
+import { isOvgcConfigured } from "@/lib/ovgc-config";
 import {
   getEffectiveSubscriptionPeriodEnd,
   getUserByDiscordId,
   syncUserDiscordFromSnapshot,
 } from "@/lib/user-db";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ billing?: string }>;
+}) {
+  const { billing } = await searchParams;
   const session = await auth();
   if (!session?.user) {
     return null;
@@ -44,11 +50,13 @@ export default async function DashboardPage() {
   await syncUserDiscordFromSnapshot(discordId, snapshot);
 
   const inviteUrl = getDiscordInviteUrl();
+  const ovgcCheckoutEnabled = isOvgcConfigured();
   const manualSubscribeGrantEnabled = isManualSubscribeGrantEnabled();
   const periodEnd = await getEffectiveSubscriptionPeriodEnd(discordId);
   const subscriptionPeriodEndIso = periodEnd?.toISOString() ?? null;
+  const nowMs = Date.now();
   const subscriptionPeriodExpired = periodEnd
-    ? periodEnd.getTime() <= Date.now()
+    ? periodEnd.getTime() <= nowMs
     : false;
 
   const dbUser = await getUserByDiscordId(discordId);
@@ -61,11 +69,13 @@ export default async function DashboardPage() {
         userName={session.user.name}
         snapshot={snapshot}
         inviteUrl={inviteUrl}
+        ovgcCheckoutEnabled={ovgcCheckoutEnabled}
         manualSubscribeGrantEnabled={manualSubscribeGrantEnabled}
         subscriptionPeriodEndIso={subscriptionPeriodEndIso}
         subscriptionPeriodExpired={subscriptionPeriodExpired}
         paymentStatus={paymentStatus}
         accountPersisted={accountPersisted}
+        billingSuccess={billing === "success"}
       />
     </div>
   );

@@ -107,7 +107,7 @@ export default function Navbar() {
               />
             ) : (
               <DiscordJoinButton
-                href="/api/auth/signin/discord"
+                href="/api/auth/discord"
                 size="nav"
                 variant="outline"
               >
@@ -172,7 +172,7 @@ export default function Navbar() {
                   />
                 ) : (
                   <DiscordJoinButton
-                    href="/api/auth/signin/discord"
+                    href="/api/auth/discord"
                     size="mobile"
                     variant="outline"
                     onClick={() => setIsMobileMenuOpen(false)}

@@ -17,7 +17,7 @@ export async function upsertUserOnDiscordSignIn(data: {
       $set: {
         ...(data.name != null && { name: data.name }),
         ...(data.image != null && { image: data.image }),
-        ...(data.email != null && { email: data.email }),
+        ...(data.email != null && { email: data.email.trim().toLowerCase() }),
       },
       $setOnInsert: {
         paymentStatus: "none",
@@ -61,6 +61,23 @@ export async function getUserByDiscordId(discordId: string) {
   return User.findOne({ discordId }).lean();
 }
 
+export async function getUserByPendingOvgcSession(ovgcSessionId: string) {
+  if (!(await connectMongo())) return null;
+  return User.findOne({ pendingOvgcSessionId: ovgcSessionId }).lean();
+}
+
+export async function getUserByPendingOvgcTransaction(transactionId: string) {
+  if (!(await connectMongo())) return null;
+  return User.findOne({ pendingOvgcTransactionId: transactionId }).lean();
+}
+
+export async function getUserByEmail(email: string) {
+  if (!(await connectMongo())) return null;
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  return User.findOne({ email: normalized }).lean();
+}
+
 /** Prefer DB period end; fall back to cookie for older sessions. */
 export async function getEffectiveSubscriptionPeriodEnd(
   discordId: string
@@ -93,5 +110,75 @@ export async function applyManualSubscriptionWindow(
       },
     },
     { upsert: true }
+  );
+}
+
+export async function setPendingOvgcSession(
+  discordId: string,
+  orderUuid: string,
+  transactionId: string
+): Promise<void> {
+  if (!(await connectMongo())) return;
+  await User.findOneAndUpdate(
+    { discordId },
+    {
+      $set: {
+        pendingOvgcSessionId: orderUuid,
+        pendingOvgcTransactionId: transactionId,
+      },
+    },
+    { upsert: true }
+  );
+}
+
+export async function clearPendingOvgcSession(discordId: string): Promise<void> {
+  if (!(await connectMongo())) return;
+  await User.findOneAndUpdate(
+    { discordId },
+    { $unset: { pendingOvgcSessionId: "", pendingOvgcTransactionId: "" } }
+  );
+}
+
+export async function applyOvgcSubscriptionWindow(
+  discordId: string,
+  periodEnd: Date,
+  ovgcSessionId: string
+): Promise<void> {
+  if (!(await connectMongo())) return;
+
+  await User.findOneAndUpdate(
+    { discordId },
+    {
+      $set: {
+        paymentStatus: "active",
+        subscriptionSource: "ovgc",
+        subscriptionCurrentPeriodEnd: periodEnd,
+        subscriptionExternalId: ovgcSessionId,
+        discordHasPaidRole: true,
+      },
+      $unset: { pendingOvgcSessionId: "", pendingOvgcTransactionId: "" },
+    },
+    { upsert: true }
+  );
+}
+
+export async function revokeOvgcSubscription(discordId: string): Promise<void> {
+  if (!(await connectMongo())) return;
+
+  await User.findOneAndUpdate(
+    { discordId },
+    {
+      $set: {
+        paymentStatus: "canceled",
+        subscriptionSource: "none",
+        discordHasPaidRole: false,
+      },
+      $unset: {
+        subscriptionCurrentPeriodEnd: "",
+        subscriptionExternalId: "",
+        pendingOvgcSessionId: "",
+        pendingOvgcTransactionId: "",
+      },
+    }
   );
 }

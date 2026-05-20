@@ -34,6 +34,10 @@ const userSchema = new Schema(
     },
     /** Optional external id when OVGC / other billing is wired. */
     subscriptionExternalId: { type: String },
+    /** Our order_uuid sent when creating the payment request. */
+    pendingOvgcSessionId: { type: String },
+    /** OVGC transaction_id returned from payment-request-api (used by webhooks). */
+    pendingOvgcTransactionId: { type: String },
   },
   { timestamps: true }
 );

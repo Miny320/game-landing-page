@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { DiscordJoinButton } from "@/components/ui/DiscordJoinButton";
 
-const discordSignInHref = "/api/auth/signin/discord";
+const discordSignInHref = "/api/auth/discord";
 
 export default function AuthPage() {
   return (

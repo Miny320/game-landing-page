@@ -62,12 +62,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Discord({
       clientId: discordId,
       clientSecret: discordSecret,
+      authorization: { params: { scope: "identify email guilds.join" } },
     }),
   ],
   callbacks: {
     async jwt({ token, user, account, profile }) {
       if (account?.provider === "discord" && account.providerAccountId) {
         token.discordId = account.providerAccountId;
+
+        if (account.access_token) {
+          try {
+            const { addGuildMemberViaOAuth } = await import("@/lib/discord-join");
+            const join = await addGuildMemberViaOAuth(
+              account.providerAccountId,
+              account.access_token
+            );
+            if (!join.ok) {
+              console.error("[auth] Auto guild join failed:", join.message ?? join.reason);
+            }
+          } catch (e) {
+            console.error("[auth] Auto guild join error:", e);
+          }
+        }
+
         try {
           const { upsertUserOnDiscordSignIn } = await import("@/lib/user-db");
           const p = profile as { global_name?: string; username?: string } | undefined;

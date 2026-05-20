@@ -14,7 +14,7 @@ interface Particle {
 }
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim();
-const discordCtaHref = discordInvite || "/api/auth/signin/discord";
+const discordCtaHref = discordInvite || "/api/auth/discord";
 const discordSecondaryLabel = discordInvite ? "Join our server" : "Sign in with Discord";
 
 export default function FinalCTA() {
