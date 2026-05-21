@@ -37,7 +37,7 @@ const userSchema = new Schema(
     /** Our order_uuid sent when creating the payment request. */
     pendingOvgcSessionId: { type: String },
     /** OVGC transaction_id returned from payment-request-api (used by webhooks). */
-    pendingOvgcTransactionId: { type: String },
+    pendingOvgcTransactionId: { type: String, index: true },
   },
   { timestamps: true }
 );

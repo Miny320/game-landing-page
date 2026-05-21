@@ -75,8 +75,17 @@ export async function fulfillOvgcCheckoutSessionTrusted(params: {
   eventType?: string;
   amount?: number;
   currency?: string;
+  /** Set browser cookie when called from a logged-in request (not webhooks). */
+  setPeriodCookie?: boolean;
 }): Promise<FulfillOvgcResult> {
-  const { ovgcSessionId, discordId, eventType, amount, currency } = params;
+  const {
+    ovgcSessionId,
+    discordId,
+    eventType,
+    amount,
+    currency,
+    setPeriodCookie = false,
+  } = params;
 
   if (await isSessionAlreadyFulfilled(ovgcSessionId)) {
     return { ok: true, alreadyFulfilled: true };
@@ -91,7 +100,9 @@ export async function fulfillOvgcCheckoutSessionTrusted(params: {
 
   const existingEnd = await getEffectiveSubscriptionPeriodEnd(discordId);
   const periodEnd = computeExtendedPeriodEnd(existingEnd);
-  await setSubscriptionPeriodEndCookie(periodEnd);
+  if (setPeriodCookie) {
+    await setSubscriptionPeriodEndCookie(periodEnd);
+  }
   await applyOvgcSubscriptionWindow(discordId, periodEnd, ovgcSessionId);
   await recordFulfillment({
     ovgcSessionId,
@@ -162,6 +173,31 @@ export async function revokeOvgcAccessForDiscord(discordId: string): Promise<voi
     console.error("[ovgc] revoke Discord role failed:", e);
   }
   await revokeOvgcSubscription(discordId);
+}
+
+/**
+ * Backup when the user lands on billing success before the OVGC webhook runs.
+ * Requires Mongo + pending transaction saved at checkout start.
+ */
+export async function tryFulfillPendingOvgcForDiscord(
+  discordId: string,
+  orderUuid?: string | null
+): Promise<FulfillOvgcResult | { ok: false; reason: "no_pending" }> {
+  const { getUserByDiscordId } = await import("@/lib/user-db");
+  const user = await getUserByDiscordId(discordId);
+  const transactionId = user?.pendingOvgcTransactionId?.trim();
+  if (!transactionId) {
+    return { ok: false, reason: "no_pending" };
+  }
+  if (orderUuid?.trim() && user?.pendingOvgcSessionId !== orderUuid.trim()) {
+    return { ok: false, reason: "no_pending" };
+  }
+
+  return fulfillOvgcCheckoutSessionTrusted({
+    ovgcSessionId: transactionId,
+    discordId,
+    setPeriodCookie: true,
+  });
 }
 
 /** Fulfill from webhook using order/session id (payment-request-api). */

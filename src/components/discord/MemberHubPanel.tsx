@@ -216,10 +216,10 @@ export function MemberHubPanel({
           : `You have the Paid User role. Current monthly access is tracked until ${periodEndDisplay}.`
         : "You have the Paid User role. Full library access is tied to this subscription. Period dates appear after you use the hub subscribe flow (or when checkout is connected)."
       : ovgcCheckoutEnabled
-        ? "You are in the server. Browse free scripts below or upgrade for Ultimate — paid access uses OVGC checkout and adds the Paid User role."
+        ? "You are in the server with free Discord access. Scripts require Ultimate — paid access uses OVGC checkout and adds the Paid User role."
         : manualSubscribeGrantEnabled
-          ? "You are in the server. Browse free scripts below or upgrade for Ultimate (dev mode can assign the paid role without payment)."
-          : "You are in the server. Browse free scripts below or upgrade when billing is enabled.";
+          ? "You are in the server with free Discord access. Scripts require Ultimate (dev mode can assign the paid role without payment)."
+          : "You are in the server with free Discord access. Scripts require Ultimate when billing is enabled.";
 
   return (
     <motion.div
@@ -299,8 +299,8 @@ export function MemberHubPanel({
               Want the full Ultimate library?
             </h2>
             <p className="mt-3 max-w-xl text-sm text-gray-400 leading-relaxed">
-              Free scripts are unlocked with Discord sign-in. For paid access and the Paid User role,
-              use the store section on the homepage.
+              Discord sign-in does not include script downloads. For the full library, Paid User role,
+              and checkout, use the store section on the homepage.
             </p>
             <Link
               href="/#store"

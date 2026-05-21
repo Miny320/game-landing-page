@@ -122,6 +122,21 @@ export async function grantPaidSubscriberRole(
 ): Promise<void> {
   const env = getDiscordGuildEnv();
   if (!env) throw new Error("Discord guild env is not configured");
+
+  const member = await fetchGuildMember(
+    env.guildId,
+    discordUserId,
+    env.botToken
+  );
+  if (!member) {
+    throw new Error(
+      "User is not in the Discord server — join the server first, then retry fulfillment"
+    );
+  }
+  if (member.roles.includes(env.paidSubscriberRoleId)) {
+    return;
+  }
+
   await addGuildMemberRole(
     env.guildId,
     discordUserId,

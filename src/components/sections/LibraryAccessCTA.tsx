@@ -23,10 +23,10 @@ import type { SubscriptionStatus } from "@/lib/subscription-status";
 const hexCtaClassName =
   "member-hub-starmap-cta group relative z-10 inline-flex items-center justify-center gap-2 overflow-hidden font-rajdhani text-base font-bold uppercase tracking-wide transition-[transform,filter] duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:scale-100 starmap-login-button starmap-signup-button !h-[52px] !text-base";
 
-const freeFeatures = [
-  "New Scripts Weekly",
+const freeCommunityFeatures = [
+  "Discord Server Access",
   "24/7 Support",
-  "Detailed Guides",
+  "Setup Guides",
 ] as const;
 
 const previewVisuals = [
@@ -167,21 +167,21 @@ export default function LibraryAccessCTA({ subscription }: Props) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-rajdhani text-[10px] font-black uppercase tracking-[0.25em] text-cyan-accent">
-                  Free access active
+                  Discord access active
                 </p>
                 <p className="mt-2 font-rajdhani text-xl font-bold text-white md:text-2xl">
                   Welcome back, {userName?.trim() || "Discord user"}
                 </p>
                 <p className="mt-2 font-sans text-sm text-gray-400 leading-relaxed">
-                  Your free library is unlocked. Browse 80+ scripts below or upgrade for Ultimate
-                  access.
+                  You are signed in and in our Discord server. Script downloads require Ultimate
+                  paid access — upgrade below to unlock the full library.
                 </p>
               </div>
               <Link
-                href="/#scripts"
+                href="/#store"
                 className={`${hexCtaClassName} shrink-0 no-underline !w-full sm:!w-auto sm:!min-w-[240px]`}
               >
-                <span className="whitespace-nowrap">Browse free library</span>
+                <span className="whitespace-nowrap">Upgrade for scripts</span>
                 <ArrowRight className="size-5 shrink-0" aria-hidden />
               </Link>
             </div>
@@ -195,18 +195,19 @@ export default function LibraryAccessCTA({ subscription }: Props) {
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-accent/10 border border-cyan-accent/20">
                   <Sparkles className="size-3 text-cyan-accent" aria-hidden />
                   <span className="font-rajdhani text-[10px] font-black text-cyan-accent tracking-widest uppercase">
-                    Free access
+                    Free to join
                   </span>
                 </div>
 
                 <h2 className="font-rajdhani text-4xl sm:text-5xl font-bold text-white leading-tight">
-                  Free Scripts Library
+                  Join with Discord
                 </h2>
 
                 <p className="font-sans text-lg text-gray-400 leading-relaxed">
-                  Sign up for <span className="font-bold text-white">FREE</span> to access over{" "}
-                  <span className="font-bold text-white">80+ scripts</span>. We sign you in with
-                  Discord and add you to our server automatically.
+                  Sign up <span className="font-bold text-white">free</span> with Discord to join our
+                  server automatically. The full script library is{" "}
+                  <span className="font-bold text-white">paid only</span> — unlock every script with
+                  Ultimate access below.
                 </p>
 
                 <StarRating label="4.8/5 from 21,000+ Users" />
@@ -221,7 +222,7 @@ export default function LibraryAccessCTA({ subscription }: Props) {
                     <Loader2 className="size-5 animate-spin" aria-hidden />
                   ) : (
                     <>
-                      <span className="whitespace-nowrap">Get instant access — free</span>
+                      <span className="whitespace-nowrap">Join free with Discord</span>
                       <ArrowRight className="size-5 shrink-0" aria-hidden />
                     </>
                   )}
@@ -231,7 +232,7 @@ export default function LibraryAccessCTA({ subscription }: Props) {
               <div className="space-y-6">
                 <div className="rounded-none border border-white/10 bg-black/30 p-6 md:p-8">
                   <ul className="space-y-5">
-                    {freeFeatures.map((feature) => (
+                    {freeCommunityFeatures.map((feature) => (
                       <li key={feature} className="flex items-center gap-4">
                         <CheckCircle2 className="size-6 shrink-0 text-cyan-accent" aria-hidden />
                         <span className="font-rajdhani text-lg font-bold uppercase tracking-wide text-white">

@@ -29,10 +29,11 @@ export function verifyOvgcWebhookPayload(payload: OvgcWebhookPayload): boolean {
   return secretsMatch(provided, expected);
 }
 
+/** OVGC may omit `success`; treat as paid unless it is explicitly false. */
 export function isOvgcPaymentSucceeded(payload: OvgcWebhookPayload): boolean {
-  return (
-    payload.payment_status === "payment.succeeded" && payload.success === true
-  );
+  if (payload.payment_status !== "payment.succeeded") return false;
+  if (payload.success === false) return false;
+  return true;
 }
 
 export function isOvgcPaymentDeclined(payload: OvgcWebhookPayload): boolean {

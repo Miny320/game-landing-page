@@ -21,7 +21,7 @@ async function redirectToDiscordSignIn(intent: "free" | "upgrade") {
   });
 }
 
-/** Free: Discord login + auto guild join, then free library. */
+/** Free: Discord login + auto guild join (no script downloads). */
 export async function handleFreeAccess(): Promise<AccessFlowResult> {
   const session = await auth();
   const discordId = session?.user?.discordId;
@@ -35,7 +35,7 @@ export async function handleFreeAccess(): Promise<AccessFlowResult> {
     }
   }
 
-  return { action: "redirect", url: "/#scripts" };
+  return { action: "redirect", url: "/#store" };
 }
 
 /** Upgrade: ensure Discord + guild (via OAuth if needed), then OVGC checkout. */

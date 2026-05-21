@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { tryFulfillPendingOvgcForDiscord } from "@/lib/ovgc-fulfillment";
 import { getUserByDiscordId } from "@/lib/user-db";
 
 export default async function BillingSuccessPage({
@@ -8,7 +9,7 @@ export default async function BillingSuccessPage({
 }: {
   searchParams: Promise<{ order_uuid?: string }>;
 }) {
-  await searchParams;
+  const { order_uuid: orderUuid } = await searchParams;
   const session = await auth();
   if (!session?.user) {
     redirect("/auth?callbackUrl=/dashboard/billing/success");
@@ -27,7 +28,17 @@ export default async function BillingSuccessPage({
     );
   }
 
-  const user = await getUserByDiscordId(discordId);
+  let user = await getUserByDiscordId(discordId);
+  if (user?.paymentStatus === "active" && user.subscriptionSource === "ovgc") {
+    redirect("/dashboard?billing=success");
+  }
+
+  const backup = await tryFulfillPendingOvgcForDiscord(discordId, orderUuid);
+  if (backup.ok) {
+    redirect("/dashboard?billing=success");
+  }
+
+  user = await getUserByDiscordId(discordId);
   if (user?.paymentStatus === "active" && user.subscriptionSource === "ovgc") {
     redirect("/dashboard?billing=success");
   }

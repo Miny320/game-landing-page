@@ -43,5 +43,5 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/#store?checkout_error=1", base));
   }
 
-  return NextResponse.redirect(new URL("/#scripts", base));
+  return NextResponse.redirect(new URL("/#store", base));
 }

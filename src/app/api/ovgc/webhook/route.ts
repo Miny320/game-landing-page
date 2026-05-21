@@ -54,6 +54,12 @@ export async function POST(req: Request) {
 
     if (!result.ok) {
       console.error("[ovgc webhook] fulfill failed:", result);
+      if (result.reason === "discord_error") {
+        return NextResponse.json(
+          { received: true, fulfilled: false, reason: result.reason, message: result.message },
+          { status: 503 }
+        );
+      }
     }
 
     revalidatePath("/dashboard");
