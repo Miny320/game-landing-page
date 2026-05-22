@@ -32,12 +32,12 @@ export function getOvgcCheckoutSessionsBaseUrl(): string | null {
 
 export function getOvgcSubscriptionAmountCents(): number {
   const raw = process.env.OVGC_SUBSCRIPTION_AMOUNT_CENTS?.trim();
-  const n = raw ? parseInt(raw, 10) : 2999;
-  if (!Number.isFinite(n) || n < 100) return 2999;
+  const n = raw ? parseInt(raw, 10) : 2900;
+  if (!Number.isFinite(n) || n < 100) return 2900;
   return n;
 }
 
-/** Amount sent as `total_amount` to payment-request-api (OVGC expects dollars, e.g. 29.99). */
+/** Amount sent as `total_amount` to payment-request-api (OVGC expects dollars, e.g. 29). */
 export function getOvgcTotalAmount(): number {
   const cents = getOvgcSubscriptionAmountCents();
   if (process.env.OVGC_TOTAL_AMOUNT_UNIT?.trim() === "cents") {

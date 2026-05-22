@@ -11,7 +11,7 @@ const scriptPacks = [
   { 
     name: "Arc Raiders: Brave Aimers", 
     image: "/scripts-visuals/arcraiders-braveaimers.png", 
-    price: "$29.99",
+    price: "$29",
     features: ["Aimbot V4", "Recoil Control", "ESP System"]
   },
   { 
@@ -35,7 +35,7 @@ const scriptPacks = [
   { 
     name: "Rainbow Six: Brave Aimers", 
     image: "/scripts-visuals/rainbowsixsiegebraveaimers.png", 
-    price: "$29.99",
+    price: "$29",
     features: ["No Recoil", "Soft Aim", "Drone Hack"]
   },
   { 

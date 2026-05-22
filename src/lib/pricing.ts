@@ -6,9 +6,12 @@ import {
 export function formatSubscriptionPrice(): string {
   const cents = getOvgcSubscriptionAmountCents();
   const dollars = cents / 100;
+  const wholeDollars = cents % 100 === 0;
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    minimumFractionDigits: wholeDollars ? 0 : 2,
+    maximumFractionDigits: wholeDollars ? 0 : 2,
   }).format(dollars);
 }
 
