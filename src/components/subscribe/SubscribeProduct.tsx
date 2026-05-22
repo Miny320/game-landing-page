@@ -1,11 +1,10 @@
-import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { SubscribePurchase } from "@/components/subscribe/SubscribePurchase";
+import { UltimateScriptPreviewRow } from "@/components/subscribe/UltimateScriptPreviewRow";
 import {
   formatSubscriptionPrice,
   getSubscriptionProductTitle,
   ULTIMATE_FEATURES,
-  ULTIMATE_PREVIEW_SCRIPTS,
 } from "@/lib/pricing";
 
 type Props = {
@@ -33,8 +32,9 @@ export function SubscribeProduct({
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_320px] lg:items-start">
         <div className="space-y-8">
           <p className="font-sans text-lg text-gray-400 leading-relaxed">
-            One subscription unlocks the full Zen script library — 200+ scripts, weekly drops,
-            and 24/7 support. Preview the Ultimate lineup below, then purchase when you are ready.
+            One subscription unlocks the full Zen script library —{" "}
+            <span className="font-bold text-white">200+ scripts</span> with more added frequently,
+            plus weekly drops and 24/7 support. The previews below are just a sample.
           </p>
 
           <ul className="space-y-4">
@@ -46,34 +46,7 @@ export function SubscribeProduct({
             ))}
           </ul>
 
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {ULTIMATE_PREVIEW_SCRIPTS.map((script) => (
-              <div
-                key={`${script.game}-${script.name}`}
-                className="relative w-[140px] shrink-0 overflow-hidden border border-amber-400/40 bg-black/50 sm:w-[160px]"
-              >
-                <div className="absolute right-2 top-2 z-10 bg-amber-400 px-2 py-0.5 font-rajdhani text-[9px] font-black uppercase tracking-widest text-black">
-                  Ultimate
-                </div>
-                <div className="relative aspect-[4/5] w-full">
-                  <Image
-                    src={script.image}
-                    alt={`${script.name} — ${script.game}`}
-                    fill
-                    className="object-cover opacity-90"
-                    sizes="160px"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-2">
-                    <p className="font-rajdhani text-[9px] font-bold uppercase tracking-wider text-gray-400">
-                      {script.game}
-                    </p>
-                    <p className="font-rajdhani text-xs font-bold text-white">{script.name}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <UltimateScriptPreviewRow />
         </div>
 
         <aside className="sticky top-28 border border-cyan-accent/30 bg-card-bg/60 p-8 shadow-2xl">

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { SectionWrapper } from "../ui/SectionWrapper";
 import { handleFreeAccess, type AccessFlowResult } from "@/actions/access-flow";
+import { UltimateScriptPreviewRow } from "@/components/subscribe/UltimateScriptPreviewRow";
 import { HexPrimaryCtaButton, HexPrimaryCtaLink } from "@/components/ui/HexPrimaryCta";
 import { formatSubscriptionPrice } from "@/lib/pricing";
 import type { SubscriptionStatus } from "@/lib/subscription-status";
@@ -31,14 +32,6 @@ const previewVisuals = [
   "/scripts-visuals/nba2k26lethalpanda.png",
   "/scripts-visuals/rainbowsixsiegebraveaimers.png",
 ];
-
-const ultimatePreviews = [
-  { game: "Arc Raiders", name: "Brave Aimers", image: "/scripts-visuals/arcraiders-braveaimers.png" },
-  { game: "NBA 2K26", name: "Lethal Panda", image: "/scripts-visuals/nba2k26lethalpanda.png" },
-  { game: "NBA 2K26", name: "Sosa Scripts", image: "/scripts-visuals/nba2k26sosacirpts.png" },
-  { game: "Rainbow Six", name: "Brave Aimers", image: "/scripts-visuals/rainbowsixsiegebraveaimers.png" },
-  { game: "Black Ops", name: "Feature Zens", image: "/scripts-visuals/blackopsfeaturezens.png" },
-] as const;
 
 function StarRating({ label }: { label: string }) {
   return (
@@ -256,8 +249,9 @@ export default function LibraryAccessCTA({ subscription }: Props) {
                 Unlock the full Zen script library
               </h3>
               <p className="mt-3 font-sans text-gray-400">
-                Preview our <strong className="text-white">Ultimate</strong> library below — full
-                access from{" "}
+                Preview a sample of our <strong className="text-white">Ultimate</strong> library
+                below — <strong className="text-white">200+ scripts</strong> with more added
+                frequently. Full access from{" "}
                 <span className="font-black text-cyan-accent">{subscriptionPrice}/month</span>.
               </p>
               <p className="mt-4 font-rajdhani text-4xl font-bold text-white tabular-nums md:text-5xl">
@@ -266,35 +260,7 @@ export default function LibraryAccessCTA({ subscription }: Props) {
               </p>
             </div>
 
-            <div className="mt-10 flex gap-4 overflow-x-auto pb-2 md:flex-wrap md:justify-center md:overflow-visible">
-              {ultimatePreviews.map((script) => (
-                <Link
-                  href="/subscribe"
-                  key={`${script.game}-${script.name}`}
-                  className="group relative w-[168px] shrink-0 overflow-hidden rounded-none border border-amber-400/40 bg-black/50 sm:w-[180px] no-underline"
-                >
-                  <div className="absolute right-2 top-2 z-10 bg-amber-400 px-2 py-0.5 font-rajdhani text-[9px] font-black uppercase tracking-widest text-black">
-                    Ultimate
-                  </div>
-                  <div className="relative aspect-[4/5] w-full overflow-hidden">
-                    <Image
-                      src={script.image}
-                      alt={`${script.name} — ${script.game}`}
-                      fill
-                      className="object-cover opacity-90 transition duration-300 group-hover:scale-105"
-                      sizes="180px"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <p className="font-rajdhani text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                        {script.game}
-                      </p>
-                      <p className="font-rajdhani text-sm font-bold text-white">{script.name}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <UltimateScriptPreviewRow linkCards className="mt-10" />
 
             <div className="mt-10 flex flex-col items-center gap-6">
               <HexPrimaryCtaLink href="/subscribe" block>
