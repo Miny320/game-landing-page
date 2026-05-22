@@ -2,24 +2,32 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { DiscordJoinButton } from "../ui/DiscordJoinButton";
 import { DiscordHeaderProfile } from "../ui/DiscordHeaderProfile";
-import { scrollToSection } from "@/lib/scroll";
+import { NavHashLink } from "../ui/NavHashLink";
 
 const navLinks = [
-  { name: "Home", href: "#top" },
-  { name: "Store", href: "#store" },
-  { name: "Scripts", href: "#scripts" },
-  { name: "Why Us", href: "#why-us" },
-  { name: "Showcase", href: "#showcase" },
-  { name: "Reviews", href: "#reviews" },
-  { name: "FAQ", href: "#faq" },
+  { name: "Home", href: "#top", type: "hash" as const },
+  { name: "Subscribe", href: "/subscribe", type: "route" as const },
+  { name: "Store", href: "#store", type: "hash" as const },
+  { name: "Scripts", href: "#scripts", type: "hash" as const },
+  { name: "Why Us", href: "#why-us", type: "hash" as const },
+  { name: "Showcase", href: "#showcase", type: "hash" as const },
+  { name: "Reviews", href: "#reviews", type: "hash" as const },
+  { name: "FAQ", href: "#faq", type: "hash" as const },
 ];
 
+const navLinkClass =
+  "text-base lg:text-lg font-semibold text-gray-300 hover:text-white relative group cursor-pointer";
+const navUnderline =
+  "absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-accent transition-all duration-300 group-hover:w-full drop-shadow-[0_0_5px_rgba(0,245,212,0.8)]";
+
 export default function Navbar() {
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -32,6 +40,8 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const closeMobile = () => setIsMobileMenuOpen(false);
 
   return (
     <motion.header
@@ -46,11 +56,12 @@ export default function Navbar() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link href="/" className="flex items-center group">
-            <div className={`relative transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) flex items-center justify-center group-hover:scale-110 ${
-              isScrolled ? "w-10 h-10 sm:w-12 sm:h-12" : "w-12 h-12 sm:w-16 sm:h-16"
-            }`}>
+            <div
+              className={`relative transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) flex items-center justify-center group-hover:scale-110 ${
+                isScrolled ? "w-10 h-10 sm:w-12 sm:h-12" : "w-12 h-12 sm:w-16 sm:h-16"
+              }`}
+            >
               {!logoFailed ? (
                 <img
                   src="/logos/logo.png"
@@ -71,26 +82,28 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-7 lg:gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(link.href);
-                  history.replaceState(null, "", link.href === "#top" ? " " : link.href);
-                }}
-                className="text-base lg:text-lg font-semibold text-gray-300 hover:text-white relative group cursor-pointer"
-              >
-                {link.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-accent transition-all duration-300 group-hover:w-full drop-shadow-[0_0_5px_rgba(0,245,212,0.8)]"></span>
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              link.type === "route" ? (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`${navLinkClass} no-underline ${
+                    pathname === link.href ? "text-white" : ""
+                  }`}
+                >
+                  {link.name}
+                  <span className={navUnderline} />
+                </Link>
+              ) : (
+                <NavHashLink key={link.name} href={link.href} className={navLinkClass}>
+                  {link.name}
+                  <span className={navUnderline} />
+                </NavHashLink>
+              )
+            )}
           </nav>
 
-          {/* Right Actions */}
           <div className="hidden md:flex items-center gap-4">
             {status === "loading" ? (
               <div
@@ -106,20 +119,18 @@ export default function Navbar() {
                 }}
               />
             ) : (
-              <DiscordJoinButton
-                href="/api/auth/discord"
-                size="nav"
-                variant="outline"
-              >
+              <DiscordJoinButton href="/api/auth/discord" size="nav" variant="outline">
                 Sign in with Discord
               </DiscordJoinButton>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button 
+          <button
+            type="button"
             className="md:hidden bg-cyan-accent border border-cyan-accent text-background p-2 rounded-none hover:bg-cyan-glow hover:border-cyan-glow transition-colors"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-expanded={isMobileMenuOpen}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {isMobileMenuOpen ? (
               <X className="w-8 h-8 text-background" />
@@ -130,7 +141,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -140,21 +150,31 @@ export default function Navbar() {
             className="md:hidden bg-black border-t border-white/5 overflow-hidden"
           >
             <div className="container mx-auto px-6 py-10 flex flex-col gap-6">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsMobileMenuOpen(false);
-                    setTimeout(() => scrollToSection(link.href), 50);
-                    history.replaceState(null, "", link.href === "#top" ? " " : link.href);
-                  }}
-                  className="text-2xl font-black text-gray-400 hover:text-cyan-accent transition-colors cursor-pointer"
-                >
-                  {link.name}
-                </a>
-              ))}
+              {navLinks.map((link) =>
+                link.type === "route" ? (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={closeMobile}
+                    className={`text-2xl font-black transition-colors no-underline ${
+                      pathname === link.href
+                        ? "text-cyan-accent"
+                        : "text-gray-400 hover:text-cyan-accent"
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                ) : (
+                  <NavHashLink
+                    key={link.name}
+                    href={link.href}
+                    onNavigate={closeMobile}
+                    className="text-2xl font-black text-gray-400 hover:text-cyan-accent transition-colors"
+                  >
+                    {link.name}
+                  </NavHashLink>
+                )
+              )}
               <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
                 {status === "loading" ? (
                   <div
@@ -168,14 +188,14 @@ export default function Navbar() {
                       name: session.user.name,
                       image: session.user.image,
                     }}
-                    onNavigate={() => setIsMobileMenuOpen(false)}
+                    onNavigate={closeMobile}
                   />
                 ) : (
                   <DiscordJoinButton
                     href="/api/auth/discord"
                     size="mobile"
                     variant="outline"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={closeMobile}
                   >
                     Sign in with Discord
                   </DiscordJoinButton>

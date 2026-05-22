@@ -6,6 +6,12 @@ declare global {
   }
 }
 
+/** Homepage path for a section hash (e.g. "#store" → "/#store"). */
+export function homeSectionHref(href: string): string {
+  if (href === "#top" || href === "/" || href === "#") return "/";
+  return href.startsWith("#") ? `/${href}` : href;
+}
+
 /**
  * Smoothly scroll to a section by hash (e.g. "#scripts") using the global Lenis
  * instance when available, falling back to native smooth scroll. Accounts for

@@ -10,6 +10,11 @@ import {
 } from "@/lib/ovgc-webhook";
 import { fulfillOvgcCheckoutSessionTrusted } from "@/lib/ovgc-fulfillment";
 import {
+  getCheckoutPendingByTransactionId,
+  markCheckoutPendingFulfilled,
+  markCheckoutPendingPaid,
+} from "@/lib/checkout-pending-db";
+import {
   getUserByEmail,
   getUserByPendingOvgcTransaction,
 } from "@/lib/user-db";
@@ -34,6 +39,42 @@ export async function POST(req: Request) {
   }
 
   if (isOvgcPaymentSucceeded(payload)) {
+    const pending = await getCheckoutPendingByTransactionId(transactionId);
+
+    if (pending?.discordId) {
+      const result = await fulfillOvgcCheckoutSessionTrusted({
+        ovgcSessionId: transactionId,
+        discordId: pending.discordId,
+        eventType: payload.payment_status,
+      });
+
+      if (result.ok && pending.orderUuid) {
+        await markCheckoutPendingFulfilled(pending.orderUuid);
+      }
+
+      if (!result.ok) {
+        console.error("[ovgc webhook] fulfill failed:", result);
+        if (result.reason === "discord_error") {
+          return NextResponse.json(
+            { received: true, fulfilled: false, reason: result.reason, message: result.message },
+            { status: 503 }
+          );
+        }
+      }
+
+      revalidatePath("/dashboard");
+      return NextResponse.json({ received: true, fulfilled: result.ok });
+    }
+
+    if (pending && !pending.discordId) {
+      await markCheckoutPendingPaid(transactionId);
+      return NextResponse.json({
+        received: true,
+        fulfilled: false,
+        awaiting_discord: true,
+      });
+    }
+
     const user =
       (await getUserByPendingOvgcTransaction(transactionId)) ??
       (await getUserByEmail(extractCustomerEmail(payload) ?? ""));

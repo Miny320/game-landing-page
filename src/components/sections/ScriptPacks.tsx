@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { SectionWrapper } from "../ui/SectionWrapper";
 import { Card } from "../ui/Card";
 import { ShoppingCart, CheckCircle2 } from "lucide-react";
-import { Button } from "../ui/Button";
 
 const scriptPacks = [
   { 
@@ -118,10 +118,13 @@ export default function ScriptPacks() {
                   </div>
 
                   <div className="pt-4 mt-auto">
-                    <Button variant="primary" className="w-full h-12 flex items-center justify-center gap-3">
+                    <Link
+                      href="/subscribe"
+                      className="flex w-full h-12 items-center justify-center gap-3 bg-cyan-accent font-semibold text-background border border-cyan-accent transition-all duration-300 hover:bg-cyan-glow hover:border-cyan-glow no-underline"
+                    >
                       <ShoppingCart className="w-4 h-4" />
-                      Purchase Pack
-                    </Button>
+                      View Ultimate access
+                    </Link>
                   </div>
                 </div>
               </Card>

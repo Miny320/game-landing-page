@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { SectionWrapper } from "../ui/SectionWrapper";
-import { Button } from "../ui/Button";
+import { HexPrimaryCtaLink } from "../ui/HexPrimaryCta";
 import { DiscordJoinButton } from "../ui/DiscordJoinButton";
 
 interface Particle {
@@ -58,13 +58,9 @@ export default function FinalCTA() {
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-8">
-            <Button
-              size="lg"
-              variant="accentFill"
-              className="starmap-login-button starmap-signup-button !w-[260px] !h-[52px] !text-lg"
-            >
+            <HexPrimaryCtaLink href="/subscribe">
               <span className="whitespace-nowrap">Get Started Now</span>
-            </Button>
+            </HexPrimaryCtaLink>
             <DiscordJoinButton href={discordCtaHref} size="lg" variant="outline">
               {discordSecondaryLabel}
             </DiscordJoinButton>

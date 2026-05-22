@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Send } from "lucide-react";
 import { Button } from "../ui/Button";
-import { scrollToSection } from "@/lib/scroll";
+import { NavHashLink } from "@/components/ui/NavHashLink";
 
 const navigationLinks = [
   { name: "Home", href: "#top" },
@@ -59,17 +59,12 @@ export default function Footer() {
             <ul className="grid grid-cols-2 gap-x-6 gap-y-4">
               {navigationLinks.map((link) => (
                 <li key={link.name}>
-                  <a
+                  <NavHashLink
                     href={link.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      scrollToSection(link.href);
-                      history.replaceState(null, "", link.href === "#top" ? " " : link.href);
-                    }}
-                    className="text-sm text-gray-500 hover:text-cyan-accent transition-colors cursor-pointer"
+                    className="text-sm text-gray-500 hover:text-cyan-accent transition-colors"
                   >
                     {link.name}
-                  </a>
+                  </NavHashLink>
                 </li>
               ))}
             </ul>

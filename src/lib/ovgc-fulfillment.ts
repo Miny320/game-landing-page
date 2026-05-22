@@ -205,6 +205,34 @@ export async function fulfillOvgcCheckoutSessionById(
   transactionId: string,
   eventType?: string
 ): Promise<FulfillOvgcResult> {
+  const {
+    getCheckoutPendingByTransactionId,
+    markCheckoutPendingFulfilled,
+    markCheckoutPendingPaid,
+  } = await import("@/lib/checkout-pending-db");
+  const pending = await getCheckoutPendingByTransactionId(transactionId);
+
+  if (pending?.discordId) {
+    const result = await fulfillOvgcCheckoutSessionTrusted({
+      ovgcSessionId: transactionId,
+      discordId: pending.discordId,
+      eventType,
+    });
+    if (result.ok && pending.orderUuid) {
+      await markCheckoutPendingFulfilled(pending.orderUuid);
+    }
+    return result;
+  }
+
+  if (pending && !pending.discordId) {
+    await markCheckoutPendingPaid(transactionId);
+    return {
+      ok: false,
+      reason: "discord_mismatch",
+      message: "Payment recorded; awaiting Discord link",
+    };
+  }
+
   const { getUserByPendingOvgcTransaction } = await import("@/lib/user-db");
   const user = await getUserByPendingOvgcTransaction(transactionId);
   const discordId = user?.discordId;

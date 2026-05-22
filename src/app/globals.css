@@ -140,6 +140,128 @@ html.lenis {
   pointer-events: none;
 }
 
+/* Primary hex CTA — 309×74 PNGs; hover = opacity crossfade (background-image swap is unreliable). */
+.hex-cta-primary {
+  --hex-clip: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%);
+  --hex-w: calc(52px * 309 / 74);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 2rem;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  height: 52px;
+  width: auto;
+  min-width: var(--hex-w);
+  max-width: 100%;
+  border: none;
+  cursor: pointer;
+  overflow: visible;
+  font-family: var(--font-rajdhani), ui-sans-serif, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #0b0b0b;
+  background: transparent;
+  transition:
+    color 0.4s ease,
+    text-shadow 0.4s ease,
+    transform 0.25s ease;
+}
+
+.hex-cta-primary::before,
+.hex-cta-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  clip-path: var(--hex-clip);
+  -webkit-clip-path: var(--hex-clip);
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+/* Filled cyan hex (default) */
+.hex-cta-primary::before {
+  background-image: url("/button_bg_hover.png");
+  opacity: 1;
+}
+
+/* Neon outline hex (hover) */
+.hex-cta-primary::after {
+  background-image: url("/button_bg.png");
+  opacity: 0;
+}
+
+.hex-cta-primary__label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.hex-cta-primary__row {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Full-width row CTAs (Upgrade, Purchase now, Get instant access) */
+.hex-cta-primary--wide {
+  width: 100%;
+  max-width: 36rem;
+}
+
+@media (hover: hover) {
+  .hex-cta-primary:hover:not(:disabled),
+  .hex-cta-primary:focus-visible:not(:disabled) {
+    color: #00ffff;
+    text-shadow:
+      0 0 10px rgba(0, 255, 255, 0.6),
+      0 0 22px rgba(0, 245, 212, 0.35);
+    transform: scale(1.02);
+  }
+
+  .hex-cta-primary:hover:not(:disabled)::before,
+  .hex-cta-primary:focus-visible:not(:disabled)::before {
+    opacity: 0;
+  }
+
+  .hex-cta-primary:hover:not(:disabled)::after,
+  .hex-cta-primary:focus-visible:not(:disabled)::after {
+    opacity: 1;
+    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.75))
+      drop-shadow(0 0 14px rgba(0, 245, 212, 0.45))
+      drop-shadow(0 0 28px rgba(0, 245, 212, 0.22));
+  }
+}
+
+.hex-cta-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.hex-cta-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.hex-cta-primary:disabled:hover {
+  transform: none;
+}
+
 .starmap-login-button {
   margin: 0;
   border: none !important;
@@ -191,6 +313,8 @@ html.lenis {
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
+  clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%);
+  -webkit-clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%);
   pointer-events: none;
   z-index: 1;
 }
@@ -224,6 +348,8 @@ html.lenis {
 
 .member-hub-starmap-cta.starmap-signup-button:hover:not(:disabled),
 .member-hub-starmap-cta.starmap-signup-button:focus-visible:not(:disabled),
+button.member-hub-starmap-cta.starmap-signup-button:hover:not(:disabled),
+button.member-hub-starmap-cta.starmap-signup-button:focus-visible:not(:disabled),
 a.member-hub-starmap-cta.starmap-signup-button:hover,
 a.member-hub-starmap-cta.starmap-signup-button:focus-visible {
   filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.75)) drop-shadow(0 0 14px rgba(0, 245, 212, 0.45))
@@ -235,6 +361,8 @@ a.member-hub-starmap-cta.starmap-signup-button:focus-visible {
 
 .member-hub-starmap-cta.starmap-signup-button:hover:not(:disabled)::before,
 .member-hub-starmap-cta.starmap-signup-button:focus-visible:not(:disabled)::before,
+button.member-hub-starmap-cta.starmap-signup-button:hover:not(:disabled)::before,
+button.member-hub-starmap-cta.starmap-signup-button:focus-visible:not(:disabled)::before,
 a.member-hub-starmap-cta.starmap-signup-button:hover::before,
 a.member-hub-starmap-cta.starmap-signup-button:focus-visible::before {
   filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.5)) drop-shadow(0 0 14px rgba(0, 245, 212, 0.35));

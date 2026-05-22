@@ -104,15 +104,13 @@ export function MemberHubPanel({
     startTransition(async () => {
       const r = await startOvgcCheckout();
       if (!r.ok) {
-        if (r.error === "missing_email") {
+        if (r.error === "invalid_email") {
           setErr(
             r.message ??
-              "Discord did not provide an email. Enable email on your Discord account and sign in again."
+              "Discord did not provide an email. Enable email on your Discord account, or purchase from /subscribe with your email."
           );
         } else if (r.error === "not_configured") {
           setErr("Checkout is not configured on the server yet.");
-        } else if (r.error === "not_signed_in") {
-          setErr("Sign in again, then retry.");
         } else {
           setErr(r.message ?? "Could not start checkout. Try again in a moment.");
         }
@@ -303,10 +301,10 @@ export function MemberHubPanel({
               and checkout, use the store section on the homepage.
             </p>
             <Link
-              href="/#store"
+              href="/subscribe"
               className={`${memberHubHexCtaClassName} mt-6 inline-flex !w-auto max-w-xs no-underline`}
             >
-              <span className="whitespace-nowrap">Go to store</span>
+              <span className="whitespace-nowrap">View Ultimate access</span>
             </Link>
           </div>
         ) : hasPaidRole ? (

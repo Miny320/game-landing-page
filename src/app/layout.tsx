@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SmoothScroll from "@/components/layout/SmoothScroll";
+import HashScrollHandler from "@/components/layout/HashScrollHandler";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ParticleBackground from "@/components/ui/ParticleBackground";
@@ -34,6 +35,7 @@ export default function RootLayout({
         
         <AuthSessionProvider>
           <SmoothScroll>
+            <HashScrollHandler />
             <Navbar />
             <main className="flex-grow">{children}</main>
             <Footer />

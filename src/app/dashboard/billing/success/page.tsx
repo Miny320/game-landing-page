@@ -4,12 +4,17 @@ import { redirect } from "next/navigation";
 import { tryFulfillPendingOvgcForDiscord } from "@/lib/ovgc-fulfillment";
 import { getUserByDiscordId } from "@/lib/user-db";
 
+/** Legacy OVGC success URL — forwards to public billing success when order_uuid is present. */
 export default async function BillingSuccessPage({
   searchParams,
 }: {
   searchParams: Promise<{ order_uuid?: string }>;
 }) {
   const { order_uuid: orderUuid } = await searchParams;
+
+  if (orderUuid?.trim()) {
+    redirect(`/billing/success?order_uuid=${encodeURIComponent(orderUuid.trim())}`);
+  }
   const session = await auth();
   if (!session?.user) {
     redirect("/auth?callbackUrl=/dashboard/billing/success");

@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "../ui/Button";
+import { HexPrimaryCtaLink } from "../ui/HexPrimaryCta";
 
 const FOLDER_CLIP =
   "polygon(0% 0%, 60% 0%, 64% 5%, 100% 5%, 100% 100%, 0% 100%)" as const;
@@ -125,11 +124,9 @@ export default function Hero() {
                 Get Access to the best scripts for every game.
               </p>
 
-              <Link href="/auth">
-                <Button variant="accentFill" size="sm" className="starmap-login-button starmap-signup-button">
-                  Shop Scripts
-                </Button>
-              </Link>
+              <HexPrimaryCtaLink href="/subscribe">
+                <span className="whitespace-nowrap">Shop Scripts</span>
+              </HexPrimaryCtaLink>
 
               </div>
             </div>

@@ -13,15 +13,10 @@ import {
   Star,
 } from "lucide-react";
 import { SectionWrapper } from "../ui/SectionWrapper";
-import {
-  handleFreeAccess,
-  handleUpgradeAccess,
-  type AccessFlowResult,
-} from "@/actions/access-flow";
+import { handleFreeAccess, type AccessFlowResult } from "@/actions/access-flow";
+import { HexPrimaryCtaButton, HexPrimaryCtaLink } from "@/components/ui/HexPrimaryCta";
+import { formatSubscriptionPrice } from "@/lib/pricing";
 import type { SubscriptionStatus } from "@/lib/subscription-status";
-
-const hexCtaClassName =
-  "member-hub-starmap-cta group relative z-10 inline-flex items-center justify-center gap-2 overflow-hidden font-rajdhani text-base font-bold uppercase tracking-wide transition-[transform,filter] duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:scale-100 starmap-login-button starmap-signup-button !h-[52px] !text-base";
 
 const freeCommunityFeatures = [
   "Discord Server Access",
@@ -99,17 +94,7 @@ export default function LibraryAccessCTA({ subscription }: Props) {
     });
   };
 
-  const onUpgrade = () => {
-    setErr(null);
-    startTransition(async () => {
-      const r = await handleUpgradeAccess();
-      if (r.action === "error") {
-        setErr(r.message);
-        return;
-      }
-      runFlowResult(r);
-    });
-  };
+  const subscriptionPrice = formatSubscriptionPrice();
 
   return (
     <SectionWrapper id="store" className="py-24 relative overflow-hidden bg-cyan-accent/[0.02]">
@@ -147,13 +132,10 @@ export default function LibraryAccessCTA({ subscription }: Props) {
               </p>
             ) : null}
             <div className="mt-6 flex flex-wrap gap-4">
-              <Link
-                href="/#scripts"
-                className={`${hexCtaClassName} no-underline !w-auto !min-w-[200px]`}
-              >
+              <HexPrimaryCtaLink href="/#scripts">
                 <span className="whitespace-nowrap">Browse library</span>
                 <ArrowRight className="size-5 shrink-0" aria-hidden />
-              </Link>
+              </HexPrimaryCtaLink>
               <Link
                 href="/dashboard"
                 className="inline-flex items-center justify-center border border-white/25 px-6 py-3 font-rajdhani text-sm font-bold uppercase tracking-widest text-white transition hover:bg-white/10"
@@ -177,13 +159,10 @@ export default function LibraryAccessCTA({ subscription }: Props) {
                   paid access — upgrade below to unlock the full library.
                 </p>
               </div>
-              <Link
-                href="/#store"
-                className={`${hexCtaClassName} shrink-0 no-underline !w-full sm:!w-auto sm:!min-w-[240px]`}
-              >
+              <HexPrimaryCtaLink href="/subscribe" className="shrink-0">
                 <span className="whitespace-nowrap">Upgrade for scripts</span>
                 <ArrowRight className="size-5 shrink-0" aria-hidden />
-              </Link>
+              </HexPrimaryCtaLink>
             </div>
           </div>
         ) : (
@@ -200,33 +179,32 @@ export default function LibraryAccessCTA({ subscription }: Props) {
                 </div>
 
                 <h2 className="font-rajdhani text-4xl sm:text-5xl font-bold text-white leading-tight">
-                  Join with Discord
+                  Free Scripts Library
                 </h2>
 
                 <p className="font-sans text-lg text-gray-400 leading-relaxed">
-                  Sign up <span className="font-bold text-white">free</span> with Discord to join our
-                  server automatically. The full script library is{" "}
-                  <span className="font-bold text-white">paid only</span> — unlock every script with
-                  Ultimate access below.
+                  Sign up <span className="font-bold text-white">FREE</span> with Discord to access
+                  our community and free scripts. The full Ultimate library is{" "}
+                  <span className="font-bold text-white">paid only</span> — see pricing below.
                 </p>
 
                 <StarRating label="4.8/5 from 21,000+ Users" />
 
-                <button
+                <HexPrimaryCtaButton
                   type="button"
                   onClick={onFree}
                   disabled={pending}
-                  className={`${hexCtaClassName} !w-full max-w-[360px]`}
+                  block
                 >
                   {pending ? (
-                    <Loader2 className="size-5 animate-spin" aria-hidden />
+                    <Loader2 className="size-5 shrink-0 animate-spin" aria-hidden />
                   ) : (
                     <>
-                      <span className="whitespace-nowrap">Join free with Discord</span>
+                      <span className="whitespace-nowrap">Get instant access — free</span>
                       <ArrowRight className="size-5 shrink-0" aria-hidden />
                     </>
                   )}
-                </button>
+                </HexPrimaryCtaButton>
               </div>
 
               <div className="space-y-6">
@@ -278,18 +256,22 @@ export default function LibraryAccessCTA({ subscription }: Props) {
                 Unlock the full Zen script library
               </h3>
               <p className="mt-3 font-sans text-gray-400">
-                Over <span className="font-bold text-white">200+ scripts</span> worth over{" "}
-                <span className="font-bold text-white">$5,000</span> for only{" "}
-                <span className="font-black text-cyan-accent">$29.99 a month</span> — preview our{" "}
-                <strong className="text-white">Ultimate</strong> library below.
+                Preview our <strong className="text-white">Ultimate</strong> library below — full
+                access from{" "}
+                <span className="font-black text-cyan-accent">{subscriptionPrice}/month</span>.
+              </p>
+              <p className="mt-4 font-rajdhani text-4xl font-bold text-white tabular-nums md:text-5xl">
+                {subscriptionPrice}
+                <span className="ml-2 font-sans text-base font-normal text-gray-500">/ month</span>
               </p>
             </div>
 
             <div className="mt-10 flex gap-4 overflow-x-auto pb-2 md:flex-wrap md:justify-center md:overflow-visible">
               {ultimatePreviews.map((script) => (
-                <div
+                <Link
+                  href="/subscribe"
                   key={`${script.game}-${script.name}`}
-                  className="group relative w-[168px] shrink-0 overflow-hidden rounded-none border border-amber-400/40 bg-black/50 sm:w-[180px]"
+                  className="group relative w-[168px] shrink-0 overflow-hidden rounded-none border border-amber-400/40 bg-black/50 sm:w-[180px] no-underline"
                 >
                   <div className="absolute right-2 top-2 z-10 bg-amber-400 px-2 py-0.5 font-rajdhani text-[9px] font-black uppercase tracking-widest text-black">
                     Ultimate
@@ -310,32 +292,21 @@ export default function LibraryAccessCTA({ subscription }: Props) {
                       <p className="font-rajdhani text-sm font-bold text-white">{script.name}</p>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
 
             <div className="mt-10 flex flex-col items-center gap-6">
-              <button
-                type="button"
-                onClick={onUpgrade}
-                disabled={pending}
-                className={`${hexCtaClassName} !w-full max-w-xl`}
-              >
-                {pending ? (
-                  <Loader2 className="size-5 animate-spin" aria-hidden />
-                ) : (
-                  <>
-                    <span className="whitespace-nowrap">Upgrade for full access</span>
-                    <ArrowRight className="size-5 shrink-0" aria-hidden />
-                  </>
-                )}
-              </button>
+              <HexPrimaryCtaLink href="/subscribe" block>
+                <span className="whitespace-nowrap">Upgrade for full access</span>
+                <ArrowRight className="size-5 shrink-0" aria-hidden />
+              </HexPrimaryCtaLink>
 
               <StarRating label="4.8/5 from 9,000+ Users" />
 
               <p className="max-w-lg text-center font-sans text-xs text-gray-500 leading-relaxed">
-                Joins you to Discord if needed, then opens secure checkout. Paid User role is
-                applied automatically after payment.
+                200+ free scripts · 4 premium scripts weekly · Secure checkout — connect Discord
+                after payment to unlock downloads.
               </p>
 
               {err ? (
