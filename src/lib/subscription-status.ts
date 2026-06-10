@@ -61,8 +61,13 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
     : false;
 
   const dbSubscriptionActive = dbPaid && !subscriptionExpired;
-  const isPaid = Boolean(hasPaidRole || dbSubscriptionActive);
-  const discordRoleMismatch = Boolean(dbSubscriptionActive && !hasPaidRole);
+  // Expired period = no paid access on site, even if Discord role not removed yet.
+  const isPaid = subscriptionExpired
+    ? false
+    : Boolean(hasPaidRole || dbSubscriptionActive);
+  const discordRoleMismatch = Boolean(
+    !subscriptionExpired && dbSubscriptionActive && !hasPaidRole
+  );
 
   return {
     signedIn: true,

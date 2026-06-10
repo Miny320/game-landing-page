@@ -162,6 +162,30 @@ export async function applyOvgcSubscriptionWindow(
   );
 }
 
+/** Active subscribers whose monthly window has ended (for scheduled expiry). */
+export async function listUsersWithExpiredSubscription(): Promise<
+  Array<{
+    discordId: string;
+    subscriptionCurrentPeriodEnd: Date;
+    paymentStatus: string;
+  }>
+> {
+  if (!(await connectMongo())) return [];
+
+  const rows = await User.find({
+    paymentStatus: { $in: ["active", "manual_active"] },
+    subscriptionCurrentPeriodEnd: { $exists: true, $lte: new Date() },
+  })
+    .select("discordId subscriptionCurrentPeriodEnd paymentStatus")
+    .lean();
+
+  return rows.map((row) => ({
+    discordId: row.discordId,
+    subscriptionCurrentPeriodEnd: new Date(row.subscriptionCurrentPeriodEnd!),
+    paymentStatus: row.paymentStatus,
+  }));
+}
+
 export async function revokeOvgcSubscription(discordId: string): Promise<void> {
   if (!(await connectMongo())) return;
 
