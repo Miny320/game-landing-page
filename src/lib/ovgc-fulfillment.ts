@@ -23,13 +23,23 @@ export type FulfillOvgcResult =
   | { ok: true; alreadyFulfilled?: boolean }
   | { ok: false; reason: "not_paid" | "discord_mismatch" | "discord_error" | "api_error"; message?: string };
 
-function computeExtendedPeriodEnd(existing: Date | null): Date {
+export function computeSubscriptionWindow(existing: Date | null): {
+  periodStart: Date;
+  periodEnd: Date;
+} {
   const days = getSubscriptionPeriodDays();
   const ms = days * 86400000;
   const now = Date.now();
   const base =
     existing && existing.getTime() > now ? existing.getTime() : now;
-  return new Date(base + ms);
+  return {
+    periodStart: new Date(base),
+    periodEnd: new Date(base + ms),
+  };
+}
+
+function computeExtendedPeriodEnd(existing: Date | null): Date {
+  return computeSubscriptionWindow(existing).periodEnd;
 }
 
 function metadataDiscordId(session: OvgcCheckoutSession): string | null {
@@ -51,6 +61,8 @@ async function recordFulfillment(data: {
   amount?: number;
   currency?: string;
   eventType?: string;
+  periodStart: Date;
+  periodEnd: Date;
 }): Promise<void> {
   if (!(await connectMongo())) return;
   await OvgcFulfillment.findOneAndUpdate(
@@ -62,6 +74,8 @@ async function recordFulfillment(data: {
         amount: data.amount,
         currency: data.currency,
         eventType: data.eventType,
+        periodStart: data.periodStart,
+        periodEnd: data.periodEnd,
       },
     },
     { upsert: true }
@@ -99,7 +113,7 @@ export async function fulfillOvgcCheckoutSessionTrusted(params: {
   }
 
   const existingEnd = await getEffectiveSubscriptionPeriodEnd(discordId);
-  const periodEnd = computeExtendedPeriodEnd(existingEnd);
+  const { periodStart, periodEnd } = computeSubscriptionWindow(existingEnd);
   if (setPeriodCookie) {
     await setSubscriptionPeriodEndCookie(periodEnd);
   }
@@ -110,6 +124,8 @@ export async function fulfillOvgcCheckoutSessionTrusted(params: {
     amount,
     currency,
     eventType,
+    periodStart,
+    periodEnd,
   });
 
   return { ok: true };

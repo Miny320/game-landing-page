@@ -7,6 +7,10 @@ const ovgcFulfillmentSchema = new Schema(
     amount: { type: Number },
     currency: { type: String },
     eventType: { type: String },
+    /** Start of the access window granted by this fulfillment. */
+    periodStart: { type: Date },
+    /** When this payment’s access ends (same value stored on users.subscriptionCurrentPeriodEnd). */
+    periodEnd: { type: Date, index: true },
   },
   { timestamps: true }
 );
