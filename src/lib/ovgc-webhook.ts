@@ -1,13 +1,30 @@
 import { timingSafeEqual } from "crypto";
 import { getOvgcWebhookSecret } from "@/lib/ovgc-config";
 
-/** Official OVGC payment-request-api webhook payload. */
+/** OVGC payment-request-api webhook payload (field names vary by event version). */
 export type OvgcWebhookPayload = {
   webhook_secret?: string;
   success?: boolean;
   transaction_id?: string;
+  invoice_id?: string;
+  invoice?: string;
+  order_uuid?: string;
+  orderUuid?: string;
   customer_email?: string;
-  payment_status?: "payment.succeeded" | "payment.declined" | string;
+  email?: string;
+  payment_status?: string;
+  status?: string;
+  event_type?: string;
+  event?: string;
+  data?: {
+    transaction_id?: string;
+    invoice_id?: string;
+    order_uuid?: string;
+    customer_email?: string;
+    email?: string;
+    payment_status?: string;
+    status?: string;
+  };
 };
 
 function secretsMatch(provided: string, expected: string): boolean {
@@ -29,27 +46,110 @@ export function verifyOvgcWebhookPayload(payload: OvgcWebhookPayload): boolean {
   return secretsMatch(provided, expected);
 }
 
+function normalizePaymentStatus(payload: OvgcWebhookPayload): string {
+  return (
+    payload.payment_status?.trim().toLowerCase() ??
+    payload.status?.trim().toLowerCase() ??
+    payload.event_type?.trim().toLowerCase() ??
+    payload.event?.trim().toLowerCase() ??
+    payload.data?.payment_status?.trim().toLowerCase() ??
+    payload.data?.status?.trim().toLowerCase() ??
+    ""
+  );
+}
+
+const SUCCEEDED_STATUSES = new Set([
+  "payment.succeeded",
+  "payment_succeeded",
+  "payment.success",
+  "payment_success",
+  "succeeded",
+  "success",
+  "paid",
+  "completed",
+  "captured",
+]);
+
 /** OVGC may omit `success`; treat as paid unless it is explicitly false. */
 export function isOvgcPaymentSucceeded(payload: OvgcWebhookPayload): boolean {
-  if (payload.payment_status !== "payment.succeeded") return false;
   if (payload.success === false) return false;
-  return true;
+
+  const status = normalizePaymentStatus(payload);
+  if (SUCCEEDED_STATUSES.has(status)) return true;
+
+  // Some payloads only set top-level success without payment_status.
+  if (payload.success === true && !status) return true;
+
+  return false;
 }
 
 export function isOvgcPaymentDeclined(payload: OvgcWebhookPayload): boolean {
-  return payload.payment_status === "payment.declined";
+  const status = normalizePaymentStatus(payload);
+  return (
+    status === "payment.declined" ||
+    status === "payment_declined" ||
+    status === "declined" ||
+    status === "failed" ||
+    status === "payment.failed"
+  );
 }
 
-export function extractTransactionId(
-  payload: OvgcWebhookPayload
-): string | null {
-  const id = payload.transaction_id?.trim();
-  return id || null;
+function pickId(...values: (string | undefined)[]): string | null {
+  for (const v of values) {
+    const trimmed = v?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
 }
 
-export function extractCustomerEmail(
-  payload: OvgcWebhookPayload
-): string | null {
-  const email = payload.customer_email?.trim().toLowerCase();
-  return email || null;
+/** Collect every id OVGC might send (checkout session, invoice, order). */
+export function extractWebhookReferenceIds(payload: OvgcWebhookPayload): string[] {
+  const ids = [
+    pickId(
+      payload.transaction_id,
+      payload.invoice_id,
+      payload.invoice,
+      payload.order_uuid,
+      payload.orderUuid,
+      payload.data?.transaction_id,
+      payload.data?.invoice_id,
+      payload.data?.order_uuid
+    ),
+  ].filter((id): id is string => Boolean(id));
+
+  return [...new Set(ids)];
+}
+
+/** Primary id for fulfillment records (prefer invoice, then transaction). */
+export function extractTransactionId(payload: OvgcWebhookPayload): string | null {
+  const ids = extractWebhookReferenceIds(payload);
+  const invoice = ids.find((id) => id.startsWith("invoice_"));
+  if (invoice) return invoice;
+  return ids[0] ?? null;
+}
+
+export function extractOrderUuid(payload: OvgcWebhookPayload): string | null {
+  return pickId(payload.order_uuid, payload.orderUuid, payload.data?.order_uuid);
+}
+
+export function extractCustomerEmail(payload: OvgcWebhookPayload): string | null {
+  const email = pickId(
+    payload.customer_email,
+    payload.email,
+    payload.data?.customer_email,
+    payload.data?.email
+  );
+  return email?.toLowerCase() ?? null;
+}
+
+/** Parse checkout session id from hosted OVGC checkout URL. */
+export function extractCheckoutSessionIdFromUrl(checkoutUrl: string): string | null {
+  try {
+    const path = new URL(checkoutUrl).pathname;
+    const match = path.match(/\/checkout\/([^/]+)/i);
+    return match?.[1]?.trim() || null;
+  } catch {
+    const match = checkoutUrl.match(/\/checkout\/([^/?]+)/i);
+    return match?.[1]?.trim() || null;
+  }
 }

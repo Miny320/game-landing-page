@@ -206,11 +206,14 @@ export async function fulfillOvgcCheckoutSessionById(
   eventType?: string
 ): Promise<FulfillOvgcResult> {
   const {
-    getCheckoutPendingByTransactionId,
     markCheckoutPendingFulfilled,
     markCheckoutPendingPaid,
+    markCheckoutPendingPaidByOrderUuid,
+    resolveCheckoutPendingFromWebhookRefs,
   } = await import("@/lib/checkout-pending-db");
-  const pending = await getCheckoutPendingByTransactionId(transactionId);
+  const pending = await resolveCheckoutPendingFromWebhookRefs({
+    ids: [transactionId],
+  });
 
   if (pending?.discordId) {
     const result = await fulfillOvgcCheckoutSessionTrusted({
@@ -225,7 +228,11 @@ export async function fulfillOvgcCheckoutSessionById(
   }
 
   if (pending && !pending.discordId) {
-    await markCheckoutPendingPaid(transactionId);
+    if (pending.orderUuid) {
+      await markCheckoutPendingPaidByOrderUuid(pending.orderUuid);
+    } else {
+      await markCheckoutPendingPaid(transactionId);
+    }
     return {
       ok: false,
       reason: "discord_mismatch",

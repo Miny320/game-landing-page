@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import {
   extractCustomerEmail,
+  extractOrderUuid,
   extractTransactionId,
+  extractWebhookReferenceIds,
   isOvgcPaymentDeclined,
   isOvgcPaymentSucceeded,
   verifyOvgcWebhookPayload,
@@ -10,9 +12,10 @@ import {
 } from "@/lib/ovgc-webhook";
 import { fulfillOvgcCheckoutSessionTrusted } from "@/lib/ovgc-fulfillment";
 import {
-  getCheckoutPendingByTransactionId,
   markCheckoutPendingFulfilled,
   markCheckoutPendingPaid,
+  markCheckoutPendingPaidByOrderUuid,
+  resolveCheckoutPendingFromWebhookRefs,
 } from "@/lib/checkout-pending-db";
 import {
   getUserByEmail,
@@ -20,6 +23,18 @@ import {
 } from "@/lib/user-db";
 
 export const runtime = "nodejs";
+
+async function fulfillForDiscord(
+  transactionId: string,
+  discordId: string,
+  eventType?: string
+) {
+  return fulfillOvgcCheckoutSessionTrusted({
+    ovgcSessionId: transactionId,
+    discordId,
+    eventType,
+  });
+}
 
 export async function POST(req: Request) {
   let payload: OvgcWebhookPayload;
@@ -30,33 +45,53 @@ export async function POST(req: Request) {
   }
 
   if (!verifyOvgcWebhookPayload(payload)) {
+    console.error("[ovgc webhook] rejected: invalid webhook_secret");
     return NextResponse.json({ error: "invalid_webhook_secret" }, { status: 401 });
   }
 
   const transactionId = extractTransactionId(payload);
-  if (!transactionId) {
+  const referenceIds = extractWebhookReferenceIds(payload);
+  const customerEmail = extractCustomerEmail(payload);
+  const orderUuid = extractOrderUuid(payload);
+
+  if (!transactionId && referenceIds.length === 0) {
     return NextResponse.json({ error: "missing_transaction_id" }, { status: 400 });
   }
 
   if (isOvgcPaymentSucceeded(payload)) {
-    const pending = await getCheckoutPendingByTransactionId(transactionId);
+    const fulfillId = transactionId ?? referenceIds[0]!;
+
+    const pending = await resolveCheckoutPendingFromWebhookRefs({
+      ids: referenceIds,
+      orderUuid,
+      email: customerEmail,
+    });
 
     if (pending?.discordId) {
-      const result = await fulfillOvgcCheckoutSessionTrusted({
-        ovgcSessionId: transactionId,
-        discordId: pending.discordId,
-        eventType: payload.payment_status,
-      });
+      const result = await fulfillForDiscord(
+        fulfillId,
+        pending.discordId,
+        payload.payment_status
+      );
 
       if (result.ok && pending.orderUuid) {
         await markCheckoutPendingFulfilled(pending.orderUuid);
       }
 
       if (!result.ok) {
-        console.error("[ovgc webhook] fulfill failed:", result);
+        console.error("[ovgc webhook] fulfill failed:", result, {
+          referenceIds,
+          orderUuid,
+          email: customerEmail,
+        });
         if (result.reason === "discord_error") {
           return NextResponse.json(
-            { received: true, fulfilled: false, reason: result.reason, message: result.message },
+            {
+              received: true,
+              fulfilled: false,
+              reason: result.reason,
+              message: result.message,
+            },
             { status: 503 }
           );
         }
@@ -67,7 +102,11 @@ export async function POST(req: Request) {
     }
 
     if (pending && !pending.discordId) {
-      await markCheckoutPendingPaid(transactionId);
+      if (pending.orderUuid) {
+        await markCheckoutPendingPaidByOrderUuid(pending.orderUuid);
+      } else {
+        await markCheckoutPendingPaid(fulfillId);
+      }
       return NextResponse.json({
         received: true,
         fulfilled: false,
@@ -76,28 +115,44 @@ export async function POST(req: Request) {
     }
 
     const user =
-      (await getUserByPendingOvgcTransaction(transactionId)) ??
-      (await getUserByEmail(extractCustomerEmail(payload) ?? ""));
+      (await getUserByPendingOvgcTransaction(fulfillId)) ??
+      (referenceIds.length
+        ? (
+            await Promise.all(
+              referenceIds.map((id) => getUserByPendingOvgcTransaction(id))
+            )
+          ).find(Boolean)
+        : null) ??
+      (customerEmail ? await getUserByEmail(customerEmail) : null);
 
     if (!user?.discordId) {
       console.error(
         "[ovgc webhook] payment.succeeded but no user for transaction:",
-        transactionId
+        { referenceIds, orderUuid, email: customerEmail }
       );
       return NextResponse.json({ received: true, fulfilled: false });
     }
 
-    const result = await fulfillOvgcCheckoutSessionTrusted({
-      ovgcSessionId: transactionId,
-      discordId: user.discordId,
-      eventType: payload.payment_status,
-    });
+    const result = await fulfillForDiscord(
+      fulfillId,
+      user.discordId,
+      payload.payment_status
+    );
 
     if (!result.ok) {
-      console.error("[ovgc webhook] fulfill failed:", result);
+      console.error("[ovgc webhook] fulfill failed:", result, {
+        referenceIds,
+        orderUuid,
+        email: customerEmail,
+      });
       if (result.reason === "discord_error") {
         return NextResponse.json(
-          { received: true, fulfilled: false, reason: result.reason, message: result.message },
+          {
+            received: true,
+            fulfilled: false,
+            reason: result.reason,
+            message: result.message,
+          },
           { status: 503 }
         );
       }
@@ -111,8 +166,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true, declined: true });
   }
 
+  console.warn("[ovgc webhook] ignored event:", {
+    payment_status: payload.payment_status,
+    status: payload.status,
+    event_type: payload.event_type,
+    referenceIds,
+  });
+
   return NextResponse.json({
     received: true,
-    ignored: payload.payment_status ?? "unknown",
+    ignored: payload.payment_status ?? payload.status ?? "unknown",
   });
 }

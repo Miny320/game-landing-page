@@ -3,6 +3,7 @@ import {
   getCheckoutPendingByOrderUuid,
   linkCheckoutPendingToDiscord,
   markCheckoutPendingFulfilled,
+  markCheckoutPendingPaidByOrderUuid,
 } from "@/lib/checkout-pending-db";
 import { fulfillOvgcCheckoutSessionTrusted } from "@/lib/ovgc-fulfillment";
 import { setPendingOvgcSession, upsertUserOnDiscordSignIn } from "@/lib/user-db";
@@ -45,12 +46,17 @@ export async function tryFulfillCheckoutOrderForDiscord(
   await upsertUserOnDiscordSignIn({ discordId, email: linked.email });
   await setPendingOvgcSession(discordId, orderUuid, linked.transactionId);
 
-  if (linked.status !== "paid" && linked.status !== "fulfilled") {
-    return { ok: true, fulfilled: false };
-  }
-
   if (linked.status === "fulfilled") {
     return { ok: true, fulfilled: true };
+  }
+
+  // Landing on /billing/success means OVGC accepted payment — fulfill even if webhook lagged.
+  if (linked.status === "pending") {
+    await markCheckoutPendingPaidByOrderUuid(orderUuid);
+  }
+
+  if (linked.status !== "paid" && linked.status !== "pending") {
+    return { ok: true, fulfilled: false };
   }
 
   const inGuild = await isUserInGuild(discordId);

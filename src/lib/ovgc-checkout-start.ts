@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import type { Session } from "next-auth";
 import { createOvgcCheckoutSession } from "@/lib/ovgc-client";
+import { extractCheckoutSessionIdFromUrl } from "@/lib/ovgc-webhook";
 import { createCheckoutPending } from "@/lib/checkout-pending-db";
 import {
   getAppBaseUrl,
@@ -54,11 +55,14 @@ export async function startOvgcCheckoutWithEmail(
       order_uuid: orderUuid,
     });
 
+    const checkoutSessionId = extractCheckoutSessionIdFromUrl(checkoutUrl);
+
     await createCheckoutPending({
       orderUuid,
       transactionId,
       email,
       discordId: options?.discordId,
+      checkoutSessionId: checkoutSessionId ?? undefined,
     });
 
     if (options?.discordId) {

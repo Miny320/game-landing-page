@@ -10,7 +10,11 @@ const checkoutStatusValues = [
 const checkoutPendingSchema = new Schema(
   {
     orderUuid: { type: String, required: true, unique: true, index: true },
-    transactionId: { type: String, required: true, unique: true, index: true },
+    transactionId: { type: String, required: true, index: true },
+    /** Session id from hosted checkout URL (/checkout/{id}). */
+    checkoutSessionId: { type: String, index: true },
+    /** Extra ids (e.g. invoice_*) returned by OVGC after capture. */
+    alternateIds: { type: [String], default: [], index: true },
     email: { type: String, required: true, index: true },
     discordId: { type: String, index: true },
     status: {
