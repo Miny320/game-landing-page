@@ -35,7 +35,11 @@ export async function GET(req: Request) {
       );
     }
 
-    const link = await tryFulfillCheckoutOrderForDiscord(orderUuid, discordId);
+    const link = await tryFulfillCheckoutOrderForDiscord(
+      orderUuid,
+      discordId,
+      session.user.email
+    );
     if (link.ok && link.fulfilled) {
       return NextResponse.redirect(new URL("/dashboard?billing=success", base));
     }

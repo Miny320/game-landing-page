@@ -47,7 +47,11 @@ export default async function BillingSuccessPage({
       redirect("/dashboard?billing=success");
     }
 
-    const link = await tryFulfillCheckoutOrderForDiscord(orderUuid, discordId);
+    const link = await tryFulfillCheckoutOrderForDiscord(
+      orderUuid,
+      discordId,
+      session.user.email
+    );
     if (link.ok && link.fulfilled) {
       redirect("/dashboard?billing=success");
     }

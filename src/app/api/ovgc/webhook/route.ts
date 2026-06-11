@@ -107,6 +107,31 @@ export async function POST(req: Request) {
       } else {
         await markCheckoutPendingPaid(fulfillId);
       }
+
+      const emailUser = customerEmail
+        ? await getUserByEmail(customerEmail)
+        : null;
+      if (emailUser?.discordId) {
+        const { linkCheckoutPendingToDiscord } = await import(
+          "@/lib/checkout-pending-db"
+        );
+        await linkCheckoutPendingToDiscord(pending.orderUuid, emailUser.discordId);
+        const result = await fulfillForDiscord(
+          fulfillId,
+          emailUser.discordId,
+          payload.payment_status
+        );
+        if (result.ok && pending.orderUuid) {
+          await markCheckoutPendingFulfilled(pending.orderUuid);
+        }
+        revalidatePath("/dashboard");
+        return NextResponse.json({
+          received: true,
+          fulfilled: result.ok,
+          linked_existing_discord: true,
+        });
+      }
+
       return NextResponse.json({
         received: true,
         fulfilled: false,

@@ -12,6 +12,7 @@ import {
   getUserByDiscordId,
   syncUserDiscordFromSnapshot,
 } from "@/lib/user-db";
+import { tryFulfillPaidCheckoutForDiscord } from "@/lib/checkout-fulfillment";
 
 export default async function DashboardPage({
   searchParams,
@@ -48,6 +49,15 @@ export default async function DashboardPage({
 
   const snapshot = await getDiscordAccessSnapshot(discordId);
   await syncUserDiscordFromSnapshot(discordId, snapshot);
+
+  const dbUserBefore = await getUserByDiscordId(discordId);
+  if (
+    dbUserBefore?.paymentStatus !== "active" &&
+    dbUserBefore?.paymentStatus !== "manual_active" &&
+    session.user.email
+  ) {
+    await tryFulfillPaidCheckoutForDiscord(discordId, session.user.email);
+  }
 
   const inviteUrl = getDiscordInviteUrl();
   const ovgcCheckoutEnabled = isOvgcConfigured();

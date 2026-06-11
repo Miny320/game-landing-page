@@ -50,6 +50,18 @@ export async function getCheckoutPendingByTransactionId(transactionId: string) {
   }).lean();
 }
 
+export async function getPaidUnfulfilledCheckoutByEmail(email: string) {
+  if (!(await connectMongo())) return null;
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  return CheckoutPending.findOne({
+    email: normalized,
+    status: "paid",
+  })
+    .sort({ updatedAt: -1 })
+    .lean();
+}
+
 export async function getCheckoutPendingByEmail(email: string) {
   if (!(await connectMongo())) return null;
   const normalized = email.trim().toLowerCase();
