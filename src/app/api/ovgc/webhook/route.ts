@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import {
   extractCustomerEmail,
   extractOrderUuid,
+  extractPaymentAmount,
+  extractPaymentCurrency,
   extractTransactionId,
   extractWebhookReferenceIds,
   isOvgcPaymentDeclined,
@@ -10,6 +12,7 @@ import {
   verifyOvgcWebhookPayload,
   type OvgcWebhookPayload,
 } from "@/lib/ovgc-webhook";
+import { getOvgcTotalAmount } from "@/lib/ovgc-config";
 import { fulfillOvgcCheckoutSessionTrusted } from "@/lib/ovgc-fulfillment";
 import {
   markCheckoutPendingFulfilled,
@@ -27,12 +30,16 @@ export const runtime = "nodejs";
 async function fulfillForDiscord(
   transactionId: string,
   discordId: string,
-  eventType?: string
+  eventType?: string,
+  amount?: number,
+  currency?: string
 ) {
   return fulfillOvgcCheckoutSessionTrusted({
     ovgcSessionId: transactionId,
     discordId,
     eventType,
+    amount: amount ?? getOvgcTotalAmount(),
+    currency: currency ?? "USD",
   });
 }
 
@@ -60,6 +67,8 @@ export async function POST(req: Request) {
 
   if (isOvgcPaymentSucceeded(payload)) {
     const fulfillId = transactionId ?? referenceIds[0]!;
+    const paymentAmount = extractPaymentAmount(payload) ?? getOvgcTotalAmount();
+    const paymentCurrency = extractPaymentCurrency(payload) ?? "USD";
 
     const pending = await resolveCheckoutPendingFromWebhookRefs({
       ids: referenceIds,
@@ -71,7 +80,9 @@ export async function POST(req: Request) {
       const result = await fulfillForDiscord(
         fulfillId,
         pending.discordId,
-        payload.payment_status
+        payload.payment_status,
+        paymentAmount,
+        paymentCurrency
       );
 
       if (result.ok && pending.orderUuid) {
@@ -119,7 +130,9 @@ export async function POST(req: Request) {
         const result = await fulfillForDiscord(
           fulfillId,
           emailUser.discordId,
-          payload.payment_status
+          payload.payment_status,
+          paymentAmount,
+          paymentCurrency
         );
         if (result.ok && pending.orderUuid) {
           await markCheckoutPendingFulfilled(pending.orderUuid);
@@ -161,7 +174,9 @@ export async function POST(req: Request) {
     const result = await fulfillForDiscord(
       fulfillId,
       user.discordId,
-      payload.payment_status
+      payload.payment_status,
+      paymentAmount,
+      paymentCurrency
     );
 
     if (!result.ok) {

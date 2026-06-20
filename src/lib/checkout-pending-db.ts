@@ -66,9 +66,18 @@ export async function getCheckoutPendingByEmail(email: string) {
   if (!(await connectMongo())) return null;
   const normalized = email.trim().toLowerCase();
   if (!normalized) return null;
+
+  const paid = await CheckoutPending.findOne({
+    email: normalized,
+    status: "paid",
+  })
+    .sort({ updatedAt: -1 })
+    .lean();
+  if (paid) return paid;
+
   return CheckoutPending.findOne({
     email: normalized,
-    status: { $in: ["pending", "paid"] },
+    status: "pending",
   })
     .sort({ updatedAt: -1 })
     .lean();

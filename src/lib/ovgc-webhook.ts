@@ -12,6 +12,9 @@ export type OvgcWebhookPayload = {
   orderUuid?: string;
   customer_email?: string;
   email?: string;
+  amount?: number | string;
+  total_amount?: number | string;
+  currency?: string;
   payment_status?: string;
   status?: string;
   event_type?: string;
@@ -22,6 +25,9 @@ export type OvgcWebhookPayload = {
     order_uuid?: string;
     customer_email?: string;
     email?: string;
+    amount?: number | string;
+    total_amount?: number | string;
+    currency?: string;
     payment_status?: string;
     status?: string;
   };
@@ -104,20 +110,23 @@ function pickId(...values: (string | undefined)[]): string | null {
 
 /** Collect every id OVGC might send (checkout session, invoice, order). */
 export function extractWebhookReferenceIds(payload: OvgcWebhookPayload): string[] {
-  const ids = [
-    pickId(
-      payload.transaction_id,
-      payload.invoice_id,
-      payload.invoice,
-      payload.order_uuid,
-      payload.orderUuid,
-      payload.data?.transaction_id,
-      payload.data?.invoice_id,
-      payload.data?.order_uuid
+  const candidates = [
+    payload.transaction_id,
+    payload.invoice_id,
+    payload.invoice,
+    payload.order_uuid,
+    payload.orderUuid,
+    payload.data?.transaction_id,
+    payload.data?.invoice_id,
+    payload.data?.order_uuid,
+  ];
+  return [
+    ...new Set(
+      candidates
+        .map((v) => v?.trim())
+        .filter((v): v is string => Boolean(v))
     ),
-  ].filter((id): id is string => Boolean(id));
-
-  return [...new Set(ids)];
+  ];
 }
 
 /** Primary id for fulfillment records (prefer invoice, then transaction). */
@@ -140,6 +149,27 @@ export function extractCustomerEmail(payload: OvgcWebhookPayload): string | null
     payload.data?.email
   );
   return email?.toLowerCase() ?? null;
+}
+
+function parseAmount(raw: number | string | undefined): number | undefined {
+  if (raw == null) return undefined;
+  const n = typeof raw === "number" ? raw : parseFloat(String(raw).trim());
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** Payment amount from webhook when OVGC includes it (otherwise use site config at fulfillment). */
+export function extractPaymentAmount(payload: OvgcWebhookPayload): number | undefined {
+  return (
+    parseAmount(payload.amount) ??
+    parseAmount(payload.total_amount) ??
+    parseAmount(payload.data?.amount) ??
+    parseAmount(payload.data?.total_amount)
+  );
+}
+
+export function extractPaymentCurrency(payload: OvgcWebhookPayload): string | undefined {
+  const c = pickId(payload.currency, payload.data?.currency);
+  return c?.toUpperCase() ?? undefined;
 }
 
 /** Parse checkout session id from hosted OVGC checkout URL. */

@@ -94,6 +94,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             image: user?.image,
             email: user?.email,
           });
+
+          // Guest checkout: activate paid subscription when Discord email matches payment email.
+          const { tryFulfillPaidCheckoutForDiscord } = await import(
+            "@/lib/checkout-fulfillment"
+          );
+          const fulfill = await tryFulfillPaidCheckoutForDiscord(
+            account.providerAccountId,
+            user?.email
+          );
+          if (fulfill.ok && fulfill.fulfilled) {
+            console.info(
+              "[auth] activated paid checkout for discord",
+              account.providerAccountId
+            );
+          }
         } catch (e) {
           console.error("[auth] Mongo upsert on sign-in failed:", e);
         }

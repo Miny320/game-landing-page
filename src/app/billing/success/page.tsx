@@ -50,7 +50,7 @@ export default async function BillingSuccessPage({
     const link = await tryFulfillCheckoutOrderForDiscord(
       orderUuid,
       discordId,
-      session.user.email
+      session.user.email ?? pending?.email
     );
     if (link.ok && link.fulfilled) {
       redirect("/dashboard?billing=success");
@@ -102,17 +102,18 @@ export default async function BillingSuccessPage({
     }
   }
 
-  const awaitingDiscord =
-    pending?.status === "paid" || pending?.status === "pending" || !pending;
+  const awaitingDiscord = pending?.status === "paid" || pending?.status === "pending";
 
   return (
     <BillingShell>
       <BillingMessage
-        title="Payment received"
+        title={pending?.status === "paid" ? "Payment confirmed" : "Payment received"}
         body={
-          awaitingDiscord
-            ? `Thanks for your order (${price}/mo). Connect Discord to join our server, receive your Paid User role, and unlock script downloads.`
-            : `Your Ultimate access (${price}/mo) is being finalized. Connect Discord if you have not already.`
+          pending?.status === "paid"
+            ? `Your payment (${price}/mo) is confirmed. Connect Discord with ${pending.email} to receive your Paid User role and unlock script downloads.`
+            : awaitingDiscord
+              ? `Thanks for your order (${price}/mo). Connect Discord to join our server, receive your Paid User role, and unlock script downloads.`
+              : `Your Ultimate access (${price}/mo) is being finalized. Connect Discord if you have not already.`
         }
         variant="pending"
         showDiscord

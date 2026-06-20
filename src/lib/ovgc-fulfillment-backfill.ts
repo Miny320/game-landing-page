@@ -1,4 +1,5 @@
 import { connectMongo } from "@/lib/db";
+import { getOvgcTotalAmount } from "@/lib/ovgc-config";
 import { getSubscriptionPeriodDays } from "@/lib/subscription-cookie";
 import { OvgcFulfillment } from "@/models/OvgcFulfillment";
 import { User } from "@/models/User";
@@ -47,6 +48,42 @@ export async function backfillOvgcFulfillmentPeriods(): Promise<{
     await OvgcFulfillment.updateOne(
       { _id: row._id },
       { $set: { periodStart, periodEnd } }
+    );
+    updated += 1;
+  }
+
+  return { scanned: rows.length, updated };
+}
+
+/** Fills amount/currency on archive rows created before webhook passed payment details. */
+export async function backfillOvgcFulfillmentAmounts(): Promise<{
+  scanned: number;
+  updated: number;
+}> {
+  if (!(await connectMongo())) {
+    return { scanned: 0, updated: 0 };
+  }
+
+  const defaultAmount = getOvgcTotalAmount();
+  const rows = await OvgcFulfillment.find({
+    $or: [
+      { amount: { $exists: false } },
+      { amount: null },
+      { currency: { $exists: false } },
+      { currency: null },
+    ],
+  }).lean();
+
+  let updated = 0;
+  for (const row of rows) {
+    await OvgcFulfillment.updateOne(
+      { _id: row._id },
+      {
+        $set: {
+          amount: row.amount ?? defaultAmount,
+          currency: row.currency ?? "USD",
+        },
+      }
     );
     updated += 1;
   }

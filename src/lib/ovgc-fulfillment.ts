@@ -18,6 +18,7 @@ import {
   getSubscriptionPeriodDays,
   setSubscriptionPeriodEndCookie,
 } from "@/lib/subscription-cookie";
+import { getOvgcTotalAmount } from "@/lib/ovgc-config";
 
 export type FulfillOvgcResult =
   | { ok: true; alreadyFulfilled?: boolean }
@@ -65,18 +66,21 @@ async function recordFulfillment(data: {
   periodEnd: Date;
 }): Promise<void> {
   if (!(await connectMongo())) return;
+
+  const amount = data.amount ?? getOvgcTotalAmount();
+  const currency = data.currency ?? "USD";
+
   await OvgcFulfillment.findOneAndUpdate(
     { ovgcSessionId: data.ovgcSessionId },
     {
       $setOnInsert: {
         ovgcSessionId: data.ovgcSessionId,
         discordId: data.discordId,
-        amount: data.amount,
-        currency: data.currency,
         eventType: data.eventType,
         periodStart: data.periodStart,
         periodEnd: data.periodEnd,
       },
+      $set: { amount, currency },
     },
     { upsert: true }
   );
