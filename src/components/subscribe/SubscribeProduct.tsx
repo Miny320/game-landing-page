@@ -12,6 +12,7 @@ type Props = {
   productTitle: string;
   defaultEmail?: string;
   signedInWithDiscord?: boolean;
+  discordUserName?: string | null;
 };
 
 export function SubscribeProduct({
@@ -19,6 +20,7 @@ export function SubscribeProduct({
   productTitle,
   defaultEmail = "",
   signedInWithDiscord = false,
+  discordUserName = null,
 }: Props) {
   return (
     <div className="container relative z-10 mx-auto max-w-5xl px-4 pb-24 pt-32">
@@ -59,6 +61,7 @@ export function SubscribeProduct({
           <SubscribePurchase
             defaultEmail={defaultEmail}
             signedInWithDiscord={signedInWithDiscord}
+            discordUserName={discordUserName}
           />
         </aside>
       </div>
@@ -69,9 +72,11 @@ export function SubscribeProduct({
 export function SubscribeProductStatic({
   defaultEmail = "",
   signedInWithDiscord = false,
+  discordUserName = null,
 }: {
   defaultEmail?: string;
   signedInWithDiscord?: boolean;
+  discordUserName?: string | null;
 }) {
   return (
     <SubscribeProduct
@@ -79,6 +84,7 @@ export function SubscribeProductStatic({
       productTitle={getSubscriptionProductTitle()}
       defaultEmail={defaultEmail}
       signedInWithDiscord={signedInWithDiscord}
+      discordUserName={discordUserName}
     />
   );
 }

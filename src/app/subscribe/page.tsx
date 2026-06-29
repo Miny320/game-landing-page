@@ -14,6 +14,7 @@ export default async function SubscribePage() {
   const session = await auth();
   const defaultEmail = session?.user?.email?.trim() ?? "";
   const signedInWithDiscord = Boolean(session?.user?.discordId);
+  const discordUserName = session?.user?.name ?? null;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -36,6 +37,7 @@ export default async function SubscribePage() {
         <SubscribeProductStatic
           defaultEmail={defaultEmail}
           signedInWithDiscord={signedInWithDiscord}
+          discordUserName={discordUserName}
         />
       </Suspense>
 

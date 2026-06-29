@@ -14,6 +14,7 @@ import {
 } from "@/lib/ovgc-webhook";
 import { getOvgcTotalAmount } from "@/lib/ovgc-config";
 import { fulfillOvgcCheckoutSessionTrusted } from "@/lib/ovgc-fulfillment";
+import { retryPaidCheckoutActivation } from "@/lib/paid-checkout-retry";
 import {
   markCheckoutPendingFulfilled,
   markCheckoutPendingPaid,
@@ -77,6 +78,10 @@ export async function POST(req: Request) {
     });
 
     if (pending?.discordId) {
+      if (pending.orderUuid && pending.status === "pending") {
+        await markCheckoutPendingPaidByOrderUuid(pending.orderUuid);
+      }
+
       const result = await fulfillForDiscord(
         fulfillId,
         pending.discordId,
@@ -145,10 +150,24 @@ export async function POST(req: Request) {
         });
       }
 
+      const retry = await retryPaidCheckoutActivation({
+        orderUuid: pending.orderUuid,
+        email: pending.email ?? customerEmail ?? undefined,
+      });
+      if (retry.fulfilled) {
+        revalidatePath("/dashboard");
+        return NextResponse.json({
+          received: true,
+          fulfilled: true,
+          recovered_on_webhook: true,
+        });
+      }
+
       return NextResponse.json({
         received: true,
         fulfilled: false,
         awaiting_discord: true,
+        retry_reason: retry.reason,
       });
     }
 

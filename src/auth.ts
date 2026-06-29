@@ -99,11 +99,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const { tryFulfillPaidCheckoutForDiscord } = await import(
             "@/lib/checkout-fulfillment"
           );
+          const { retryPaidCheckoutActivation } = await import(
+            "@/lib/paid-checkout-retry"
+          );
           const fulfill = await tryFulfillPaidCheckoutForDiscord(
             account.providerAccountId,
             user?.email
           );
-          if (fulfill.ok && fulfill.fulfilled) {
+          if (!fulfill.ok || !fulfill.fulfilled) {
+            const retry = await retryPaidCheckoutActivation({
+              email: user?.email ?? undefined,
+            });
+            if (retry.fulfilled) {
+              console.info(
+                "[auth] activated paid checkout via retry for discord",
+                account.providerAccountId
+              );
+            }
+          } else if (fulfill.ok && fulfill.fulfilled) {
             console.info(
               "[auth] activated paid checkout for discord",
               account.providerAccountId
