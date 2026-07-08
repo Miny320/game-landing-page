@@ -38,7 +38,7 @@ export function SubscribePurchase({
   const onPurchase = () => {
     setErr(null);
     if ((guestNeedsEmail || needsReceiptEmail) && !email.trim()) {
-      setErr("Enter your email to continue.");
+      setErr("Enter your Discord account email to continue.");
       return;
     }
     startTransition(async () => {
@@ -70,7 +70,7 @@ export function SubscribePurchase({
         {needsReceiptEmail ? (
           <label className="block">
             <span className="font-rajdhani text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-              Email for receipt
+              Discord account email
             </span>
             <input
               type="email"
@@ -81,8 +81,12 @@ export function SubscribePurchase({
               onChange={(e) => setEmail(e.target.value)}
               disabled={pending}
               className="mt-2 w-full border border-white/15 bg-black/40 px-4 py-3 font-sans text-sm text-white outline-none focus:border-cyan-accent/50"
-              placeholder="you@example.com"
+              placeholder="Same email linked to your Discord"
             />
+            <p className="mt-2 font-sans text-xs text-gray-500 leading-relaxed">
+              Use the email on your Discord account so we can grant your Paid User role
+              automatically.
+            </p>
           </label>
         ) : null}
 
@@ -121,7 +125,7 @@ export function SubscribePurchase({
       <div className="space-y-3">
         <label className="block">
           <span className="font-rajdhani text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-            Email for checkout
+            Discord account email
           </span>
           <input
             type="email"
@@ -132,8 +136,12 @@ export function SubscribePurchase({
             onChange={(e) => setEmail(e.target.value)}
             disabled={pending}
             className="mt-2 w-full border border-white/15 bg-black/40 px-4 py-3 font-sans text-sm text-white outline-none focus:border-cyan-accent/50"
-            placeholder="you@example.com"
+            placeholder="Same email linked to your Discord"
           />
+          <p className="mt-2 font-sans text-xs text-amber-200/90 leading-relaxed">
+            Important: enter the email on your Discord account. If this does not match, you
+            will not receive your Paid User role after payment.
+          </p>
         </label>
 
         <HexPrimaryCtaButton type="button" onClick={onPurchase} disabled={pending} block>
@@ -148,8 +156,8 @@ export function SubscribePurchase({
         </HexPrimaryCtaButton>
 
         <p className="font-sans text-xs text-gray-500 leading-relaxed">
-          Pay with card on the next page. After payment you&apos;ll connect Discord with this
-          same email to activate your Paid User role and script downloads.
+          Pay with card on the next page. After payment, connect Discord using this same email
+          to activate your Paid User role and script downloads.
         </p>
       </div>
 

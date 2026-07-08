@@ -102,7 +102,7 @@ export default async function BillingSuccessPage({
             title="Order linked to another account"
             body={
               link.message ??
-              "This payment is linked to a different Discord account. Sign in with the Discord account that matches your payment email, or contact support."
+              "This payment is linked to a different Discord account. Sign in with the Discord account that matches your checkout email, or contact support."
             }
             variant="error"
             orderUuid={orderUuid}
@@ -165,9 +165,9 @@ export default async function BillingSuccessPage({
         title={paymentConfirmed ? "Payment confirmed" : "Payment received"}
         body={
           paymentConfirmed
-            ? `Your ${price}/mo subscription is paid. This is the final step: connect Discord with ${paymentEmail ?? "the same email you paid with"} to receive your Paid User role and unlock script downloads.`
+            ? `Your ${price}/mo subscription is paid. This is the final step: connect Discord with ${paymentEmail ?? "the Discord account email you entered at checkout"} to receive your Paid User role and unlock script downloads.`
             : paymentPending
-              ? `Thanks for your order (${price}/mo). When OVGC confirms payment, connect Discord with the same email you used at checkout to activate your Paid User role.`
+              ? `Thanks for your order (${price}/mo). When OVGC confirms payment, connect Discord with the same Discord account email you used at checkout to activate your Paid User role.`
               : `Your Ultimate access (${price}/mo) is being finalized. Connect Discord to activate your subscription on our server.`
         }
         variant="pending"
@@ -250,7 +250,7 @@ function BillingMessage({
         <p className="mt-4 rounded-none border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95 leading-relaxed">
           You signed in as <span className="font-semibold">{sessionEmail}</span>, but this order
           was paid with <span className="font-semibold">{paymentEmail}</span>. Sign out and
-          connect Discord using the payment email, or contact support if you need help.
+          connect Discord using that checkout email, or contact support if you need help.
         </p>
       ) : null}
 

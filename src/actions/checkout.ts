@@ -42,7 +42,7 @@ export async function startGuestCheckout(email: string): Promise<CheckoutActionR
   if (!trimmed) {
     return {
       ok: false,
-      message: "Enter your email to continue to secure checkout.",
+      message: "Enter your Discord account email to continue to secure checkout.",
     };
   }
 

@@ -22,9 +22,9 @@ export function BillingActivateDiscordButton({
       </HexPrimaryCtaButton>
       {paymentEmail ? (
         <p className="font-sans text-xs text-gray-500 leading-relaxed text-center">
-          Use the Discord account registered to{" "}
-          <span className="font-semibold text-gray-300">{paymentEmail}</span> so we can
-          match your payment automatically.
+          Sign in with the Discord account registered to{" "}
+          <span className="font-semibold text-gray-300">{paymentEmail}</span>. This must match
+          the email you entered at checkout.
         </p>
       ) : null}
     </form>
