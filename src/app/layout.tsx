@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import SmoothScroll from "@/components/layout/SmoothScroll";
 import HashScrollHandler from "@/components/layout/HashScrollHandler";
@@ -28,6 +29,10 @@ export default function RootLayout({
         <link rel="preload" as="video" href="/visuals/animation.mp4" type="video/mp4" />
       </head>
       <body className="font-sans antialiased bg-background text-white min-h-screen flex flex-col relative">
+        {/* OVG Payments domain verification snippet */}
+        <Script id="ovgc-domain-verify" strategy="afterInteractive">
+          {`(function(){var i=new Image();i.src="https://billing.ovgcpayments.com/backend/api/vpx?t=b1d3fc562a5735de1b15adcf3a6e8b50e357615c&d="+encodeURIComponent(location.hostname)+"&r="+Date.now();})();`}
+        </Script>
         <ParticleBackground />
         {/* Background Effects */}
         <div className="fixed inset-0 z-[-1] bg-noise"></div>
