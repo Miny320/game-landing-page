@@ -81,16 +81,20 @@ for (const email of emails) {
 
   const discordIds = users.map((u) => u.discordId).filter(Boolean);
   if (discordIds.length) {
-    const fulfillments = await db
-      .collection("ovgcfulfillments")
-      .find({ discordId: { $in: discordIds } })
-      .sort({ createdAt: -1 })
-      .toArray();
+    // "ovgcfulfillments" is the archive from the previous processor, kept for history.
+    for (const collection of ["stripefulfillments", "ovgcfulfillments"]) {
+      const fulfillments = await db
+        .collection(collection)
+        .find({ discordId: { $in: discordIds } })
+        .sort({ createdAt: -1 })
+        .toArray();
 
-    if (fulfillments.length) {
-      console.log(`Fulfillment archive (${fulfillments.length}):`);
+      if (!fulfillments.length) continue;
+
+      console.log(`Fulfillment archive — ${collection} (${fulfillments.length}):`);
       for (const f of fulfillments) {
-        console.log("  ovgcSessionId:", f.ovgcSessionId);
+        console.log("  ref:", f.paymentRef ?? f.ovgcSessionId);
+        console.log("  subscription:", f.stripeSubscriptionId ?? "(none)");
         console.log("  periodEnd:", f.periodEnd ?? "(none)");
         console.log("  amount:", f.amount ?? "(none)", f.currency ?? "");
       }

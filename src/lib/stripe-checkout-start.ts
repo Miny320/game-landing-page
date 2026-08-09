@@ -1,23 +1,19 @@
 import { randomUUID } from "crypto";
 import type { Session } from "next-auth";
-import { createOvgcCheckoutSession } from "@/lib/ovgc-client";
-import { extractCheckoutSessionIdFromUrl } from "@/lib/ovgc-webhook";
+import { createStripeCheckoutSession } from "@/lib/stripe-client";
 import { createCheckoutPending } from "@/lib/checkout-pending-db";
+import { getAppBaseUrl, isStripeConfigured } from "@/lib/stripe-config";
 import {
-  getAppBaseUrl,
-  getOvgcProductTitle,
-  isOvgcConfigured,
-} from "@/lib/ovgc-config";
-import { setPendingOvgcSession, upsertUserOnDiscordSignIn } from "@/lib/user-db";
+  getUserByDiscordId,
+  setPendingCheckoutSession,
+  upsertUserOnDiscordSignIn,
+} from "@/lib/user-db";
 
 export type StartCheckoutResult =
   | { ok: true; checkoutUrl: string; orderUuid: string }
   | {
       ok: false;
-      error:
-        | "not_configured"
-        | "invalid_email"
-        | "checkout_error";
+      error: "not_configured" | "invalid_email" | "checkout_error";
       message?: string;
     };
 
@@ -29,40 +25,53 @@ function normalizeEmail(email: string): string | null {
   return trimmed;
 }
 
-/** Start OVGC checkout from email only (Discord linked after payment). */
-export async function startOvgcCheckoutWithEmail(
+/** Start Stripe checkout from an email only (Discord linked after payment). */
+export async function startStripeCheckoutWithEmail(
   emailInput: string,
   options?: { discordId?: string; discordName?: string; discordImage?: string }
 ): Promise<StartCheckoutResult> {
-  if (!isOvgcConfigured()) {
-    return { ok: false, error: "not_configured", message: "Checkout is not configured." };
+  if (!isStripeConfigured()) {
+    return {
+      ok: false,
+      error: "not_configured",
+      message: "Checkout is not configured.",
+    };
   }
 
   const email = normalizeEmail(emailInput);
   if (!email) {
-    return { ok: false, error: "invalid_email", message: "Enter a valid email address." };
+    return {
+      ok: false,
+      error: "invalid_email",
+      message: "Enter a valid email address.",
+    };
   }
 
   const base = getAppBaseUrl();
   const orderUuid = randomUUID();
 
   try {
-    const { checkoutUrl, transactionId } = await createOvgcCheckoutSession({
-      email,
-      product_title: getOvgcProductTitle(),
-      success_url: `${base}/billing/success?order_uuid=${orderUuid}`,
-      cancel_url: `${base}/billing/cancel?order_uuid=${orderUuid}`,
-      order_uuid: orderUuid,
-    });
+    // Reuse the Stripe customer so a returning subscriber keeps one billing record.
+    const existingCustomerId = options?.discordId
+      ? (await getUserByDiscordId(options.discordId))?.stripeCustomerId?.trim()
+      : null;
 
-    const checkoutSessionId = extractCheckoutSessionIdFromUrl(checkoutUrl);
+    const { sessionId, url, customerId } = await createStripeCheckoutSession({
+      email,
+      orderUuid,
+      discordId: options?.discordId,
+      customerId: existingCustomerId || null,
+      successUrl: `${base}/billing/success?order_uuid=${orderUuid}&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${base}/billing/cancel?order_uuid=${orderUuid}`,
+    });
 
     await createCheckoutPending({
       orderUuid,
-      transactionId,
+      transactionId: sessionId,
       email,
       discordId: options?.discordId,
-      checkoutSessionId: checkoutSessionId ?? undefined,
+      checkoutSessionId: sessionId,
+      stripeCustomerId: customerId ?? undefined,
     });
 
     if (options?.discordId) {
@@ -72,18 +81,18 @@ export async function startOvgcCheckoutWithEmail(
         name: options.discordName,
         image: options.discordImage,
       });
-      await setPendingOvgcSession(options.discordId, orderUuid, transactionId);
+      await setPendingCheckoutSession(options.discordId, orderUuid, sessionId);
     }
 
-    return { ok: true, checkoutUrl, orderUuid };
+    return { ok: true, checkoutUrl: url, orderUuid };
   } catch (e) {
     const message =
-      e instanceof Error ? e.message : "Could not start OVGC checkout";
+      e instanceof Error ? e.message : "Could not start Stripe checkout";
     return { ok: false, error: "checkout_error", message };
   }
 }
 
-export async function startOvgcCheckoutForSession(
+export async function startStripeCheckoutForSession(
   session: Session | null
 ): Promise<StartCheckoutResult> {
   const email = session?.user?.email?.trim();
@@ -96,7 +105,7 @@ export async function startOvgcCheckoutForSession(
     };
   }
 
-  return startOvgcCheckoutWithEmail(email, {
+  return startStripeCheckoutWithEmail(email, {
     discordId: session?.user?.discordId ?? undefined,
     discordName: session?.user?.name ?? undefined,
     discordImage: session?.user?.image ?? undefined,

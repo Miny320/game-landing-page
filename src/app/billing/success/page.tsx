@@ -5,6 +5,7 @@ import { getCheckoutPendingByOrderUuid } from "@/lib/checkout-pending-db";
 import { formatSubscriptionPrice } from "@/lib/pricing";
 import { BillingActivateDiscordButton } from "@/components/billing/BillingActivateDiscordButton";
 import { getUserByDiscordId } from "@/lib/user-db";
+import { isPaidCheckoutSource } from "@/lib/subscription-source";
 import { redirect } from "next/navigation";
 
 export default async function BillingSuccessPage({
@@ -47,7 +48,10 @@ export default async function BillingSuccessPage({
 
   if (discordId) {
     const user = await getUserByDiscordId(discordId);
-    if (user?.paymentStatus === "active" && user.subscriptionSource === "ovgc") {
+    if (
+      user?.paymentStatus === "active" &&
+      isPaidCheckoutSource(user.subscriptionSource)
+    ) {
       redirect("/dashboard?billing=success");
     }
 
@@ -66,7 +70,7 @@ export default async function BillingSuccessPage({
           <ActivationSteps paymentConfirmed={pending?.status === "paid"} />
           <BillingMessage
             title="Payment received"
-            body={`Thanks for subscribing (${price}/mo). OVGC is confirming your payment — your Paid User role will apply automatically within a minute. Open your member hub and refresh status if needed.`}
+            body={`Thanks for subscribing (${price}/mo). Stripe is confirming your payment — your Paid User role will apply automatically within a minute. Open your member hub and refresh status if needed.`}
             variant="pending"
             href="/dashboard"
             hrefLabel="Open member hub"
@@ -167,7 +171,7 @@ export default async function BillingSuccessPage({
           paymentConfirmed
             ? `Your ${price}/mo subscription is paid. This is the final step: connect Discord with ${paymentEmail ?? "the Discord account email you entered at checkout"} to receive your Paid User role and unlock script downloads.`
             : paymentPending
-              ? `Thanks for your order (${price}/mo). When OVGC confirms payment, connect Discord with the same Discord account email you used at checkout to activate your Paid User role.`
+              ? `Thanks for your order (${price}/mo). When Stripe confirms payment, connect Discord with the same Discord account email you used at checkout to activate your Paid User role.`
               : `Your Ultimate access (${price}/mo) is being finalized. Connect Discord to activate your subscription on our server.`
         }
         variant="pending"

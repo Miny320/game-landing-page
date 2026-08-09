@@ -1,5 +1,6 @@
 /**
- * Manually activate paid OVGC checkouts for users who paid by email but never linked Discord.
+ * Manually activate a paid Stripe checkout for a user who paid by email but never
+ * linked Discord.
  *
  * Usage:
  *   node --env-file=.env scripts/activate-paid-checkout.mjs \
@@ -33,7 +34,10 @@ const periodDays = (() => {
   return Number.isFinite(n) && n >= 1 ? n : 30;
 })();
 const amount = (() => {
-  const cents = parseInt(process.env.OVGC_SUBSCRIPTION_AMOUNT_CENTS?.trim() || "1999", 10);
+  const cents = parseInt(
+    process.env.STRIPE_SUBSCRIPTION_AMOUNT_CENTS?.trim() || "1999",
+    10
+  );
   return Number.isFinite(cents) ? cents / 100 : 19.99;
 })();
 
@@ -108,7 +112,7 @@ const periodStart = now;
 const transactionId = checkout.transactionId;
 const displayName = username ?? discordId;
 
-console.log(`Activating ${email} → ${discordId} (invoice ${transactionId})`);
+console.log(`Activating ${email} → ${discordId} (checkout ${transactionId})`);
 
 await grantRole(discordId);
 console.log("Paid User role granted on Discord.");
@@ -121,14 +125,14 @@ await db.collection("users").updateOne(
       email,
       name: displayName,
       paymentStatus: "active",
-      subscriptionSource: "ovgc",
+      subscriptionSource: "stripe",
       subscriptionCurrentPeriodEnd: periodEnd,
       subscriptionExternalId: transactionId,
       discordHasPaidRole: true,
       discordInGuild: true,
       discordSyncedAt: now,
     },
-    $unset: { pendingOvgcSessionId: "", pendingOvgcTransactionId: "" },
+    $unset: { pendingCheckoutOrderUuid: "", pendingCheckoutSessionId: "" },
   },
   { upsert: true }
 );
@@ -140,8 +144,8 @@ await db.collection("checkoutpendings").updateOne(
 );
 console.log("Checkout marked fulfilled.");
 
-await db.collection("ovgcfulfillments").updateOne(
-  { ovgcSessionId: transactionId },
+await db.collection("stripefulfillments").updateOne(
+  { paymentRef: transactionId },
   {
     $set: {
       amount,
@@ -150,7 +154,7 @@ await db.collection("ovgcfulfillments").updateOne(
       periodEnd,
     },
     $setOnInsert: {
-      ovgcSessionId: transactionId,
+      paymentRef: transactionId,
       discordId,
       eventType: "manual_activation",
     },

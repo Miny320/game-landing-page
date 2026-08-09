@@ -1,5 +1,5 @@
 import { connectMongo } from "@/lib/db";
-import { fulfillOvgcCheckoutSessionTrusted } from "@/lib/ovgc-fulfillment";
+import { fulfillStripeCheckoutSessionId } from "@/lib/stripe-fulfillment";
 import { isUserInGuild } from "@/lib/discord-join";
 import {
   linkCheckoutPendingToDiscord,
@@ -8,7 +8,6 @@ import {
 } from "@/lib/checkout-pending-db";
 import { getUserByEmail } from "@/lib/user-db";
 import { CheckoutPending } from "@/models/CheckoutPending";
-import { getOvgcTotalAmount } from "@/lib/ovgc-config";
 
 export type PaidCheckoutRetryResult = {
   scanned: number;
@@ -33,10 +32,6 @@ async function activatePaidCheckoutRow(
     return { ok: true };
   }
 
-  if (row.status === "pending") {
-    await markCheckoutPendingPaidByOrderUuid(row.orderUuid);
-  }
-
   if (row.status !== "paid" && row.status !== "pending") {
     return { ok: false, reason: `invalid_status_${row.status}` };
   }
@@ -48,14 +43,18 @@ async function activatePaidCheckoutRow(
 
   await linkCheckoutPendingToDiscord(row.orderUuid, discordId);
 
-  const result = await fulfillOvgcCheckoutSessionTrusted({
-    ovgcSessionId: row.transactionId,
+  // Amount, currency and period end all come from the Stripe session itself.
+  const result = await fulfillStripeCheckoutSessionId(
+    row.transactionId,
     discordId,
-    amount: getOvgcTotalAmount(),
-    currency: "USD",
-  });
+    { eventType: "checkout.retry" }
+  );
 
   if (!result.ok) {
+    // Payment is confirmed but activation failed — keep it queued as "paid" for the next run.
+    if (result.reason !== "not_paid" && row.status === "pending") {
+      await markCheckoutPendingPaidByOrderUuid(row.orderUuid);
+    }
     return {
       ok: false,
       reason: result.reason ?? "fulfill_failed",

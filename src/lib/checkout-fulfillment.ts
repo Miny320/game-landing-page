@@ -6,8 +6,11 @@ import {
   markCheckoutPendingFulfilled,
   markCheckoutPendingPaidByOrderUuid,
 } from "@/lib/checkout-pending-db";
-import { fulfillOvgcCheckoutSessionTrusted } from "@/lib/ovgc-fulfillment";
-import { setPendingOvgcSession, upsertUserOnDiscordSignIn } from "@/lib/user-db";
+import { fulfillStripeCheckoutSessionId } from "@/lib/stripe-fulfillment";
+import {
+  setPendingCheckoutSession,
+  upsertUserOnDiscordSignIn,
+} from "@/lib/user-db";
 
 export type LinkOrderResult =
   | { ok: true; fulfilled: boolean; orderUuid?: string }
@@ -43,10 +46,6 @@ async function fulfillPendingCheckout(
     return { ok: true, fulfilled: true, orderUuid };
   }
 
-  if (linked.status === "pending") {
-    await markCheckoutPendingPaidByOrderUuid(orderUuid);
-  }
-
   if (linked.status !== "paid" && linked.status !== "pending") {
     return { ok: true, fulfilled: false, orderUuid };
   }
@@ -60,13 +59,21 @@ async function fulfillPendingCheckout(
     };
   }
 
-  const result = await fulfillOvgcCheckoutSessionTrusted({
-    ovgcSessionId: linked.transactionId,
+  // Re-reads the Checkout Session from Stripe, so an unpaid order cannot be activated here.
+  const result = await fulfillStripeCheckoutSessionId(
+    linked.transactionId,
     discordId,
-    setPeriodCookie: true,
-  });
+    { setPeriodCookie: true }
+  );
 
   if (!result.ok) {
+    if (result.reason === "not_paid") {
+      return { ok: false, reason: "not_paid" };
+    }
+    // Stripe confirmed the payment, so record that even though activation failed.
+    if (linked.status === "pending") {
+      await markCheckoutPendingPaidByOrderUuid(orderUuid);
+    }
     return {
       ok: false,
       reason: "fulfill_failed",
@@ -102,7 +109,7 @@ export async function tryFulfillPaidCheckoutForDiscord(
   }
 
   await upsertUserOnDiscordSignIn({ discordId, email: linked.email });
-  await setPendingOvgcSession(discordId, paid.orderUuid, linked.transactionId);
+  await setPendingCheckoutSession(discordId, paid.orderUuid, linked.transactionId);
 
   return fulfillPendingCheckout(paid.orderUuid, discordId, linked);
 }
@@ -146,6 +153,6 @@ export async function tryFulfillCheckoutOrderForDiscord(
     return paidFallback;
   }
 
-  await setPendingOvgcSession(discordId, orderUuid, linked.transactionId);
+  await setPendingCheckoutSession(discordId, orderUuid, linked.transactionId);
   return result;
 }

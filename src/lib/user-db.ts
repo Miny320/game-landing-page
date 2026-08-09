@@ -61,14 +61,20 @@ export async function getUserByDiscordId(discordId: string) {
   return User.findOne({ discordId }).lean();
 }
 
-export async function getUserByPendingOvgcSession(ovgcSessionId: string) {
+export async function getUserByStripeSubscriptionId(subscriptionId: string) {
   if (!(await connectMongo())) return null;
-  return User.findOne({ pendingOvgcSessionId: ovgcSessionId }).lean();
+  const id = subscriptionId.trim();
+  if (!id) return null;
+  return User.findOne({
+    $or: [{ stripeSubscriptionId: id }, { subscriptionExternalId: id }],
+  }).lean();
 }
 
-export async function getUserByPendingOvgcTransaction(transactionId: string) {
+export async function getUserByStripeCustomerId(customerId: string) {
   if (!(await connectMongo())) return null;
-  return User.findOne({ pendingOvgcTransactionId: transactionId }).lean();
+  const id = customerId.trim();
+  if (!id) return null;
+  return User.findOne({ stripeCustomerId: id }).lean();
 }
 
 export async function getUserByEmail(email: string) {
@@ -113,56 +119,103 @@ export async function applyManualSubscriptionWindow(
   );
 }
 
-export async function setPendingOvgcSession(
+export async function setPendingCheckoutSession(
   discordId: string,
   orderUuid: string,
-  transactionId: string
+  checkoutSessionId: string
 ): Promise<void> {
   if (!(await connectMongo())) return;
   await User.findOneAndUpdate(
     { discordId },
     {
       $set: {
-        pendingOvgcSessionId: orderUuid,
-        pendingOvgcTransactionId: transactionId,
+        pendingCheckoutOrderUuid: orderUuid,
+        pendingCheckoutSessionId: checkoutSessionId,
       },
     },
     { upsert: true }
   );
 }
 
-export async function clearPendingOvgcSession(discordId: string): Promise<void> {
+export async function clearPendingCheckoutSession(
+  discordId: string
+): Promise<void> {
   if (!(await connectMongo())) return;
   await User.findOneAndUpdate(
     { discordId },
-    { $unset: { pendingOvgcSessionId: "", pendingOvgcTransactionId: "" } }
+    {
+      $unset: {
+        pendingCheckoutOrderUuid: "",
+        pendingCheckoutSessionId: "",
+      },
+    }
   );
 }
 
-export async function applyOvgcSubscriptionWindow(
+/**
+ * Stores the paid window for a Stripe subscription, along with the customer and
+ * subscription ids used by renewals and the billing portal.
+ */
+export async function applyStripeSubscriptionWindow(
   discordId: string,
   periodEnd: Date,
-  ovgcSessionId: string
+  refs: {
+    stripeSubscriptionId?: string | null;
+    stripeCustomerId?: string | null;
+    cancelAtPeriodEnd?: boolean;
+  } = {}
 ): Promise<void> {
   if (!(await connectMongo())) return;
+
+  const subscriptionId = refs.stripeSubscriptionId?.trim();
+  const customerId = refs.stripeCustomerId?.trim();
 
   await User.findOneAndUpdate(
     { discordId },
     {
       $set: {
         paymentStatus: "active",
-        subscriptionSource: "ovgc",
+        subscriptionSource: "stripe",
         subscriptionCurrentPeriodEnd: periodEnd,
-        subscriptionExternalId: ovgcSessionId,
         discordHasPaidRole: true,
+        ...(subscriptionId
+          ? {
+              stripeSubscriptionId: subscriptionId,
+              subscriptionExternalId: subscriptionId,
+            }
+          : {}),
+        ...(customerId ? { stripeCustomerId: customerId } : {}),
+        ...(refs.cancelAtPeriodEnd != null
+          ? { subscriptionCancelAtPeriodEnd: refs.cancelAtPeriodEnd }
+          : {}),
       },
-      $unset: { pendingOvgcSessionId: "", pendingOvgcTransactionId: "" },
+      $unset: { pendingCheckoutOrderUuid: "", pendingCheckoutSessionId: "" },
     },
     { upsert: true }
   );
 }
 
-/** Active subscribers whose monthly window has ended (for scheduled expiry). */
+/** Payment failed but Stripe is still retrying — keep access until the subscription ends. */
+export async function markSubscriptionPastDue(discordId: string): Promise<void> {
+  if (!(await connectMongo())) return;
+  await User.findOneAndUpdate(
+    { discordId },
+    { $set: { paymentStatus: "past_due" } }
+  );
+}
+
+export async function setSubscriptionCancelAtPeriodEnd(
+  discordId: string,
+  cancelAtPeriodEnd: boolean
+): Promise<void> {
+  if (!(await connectMongo())) return;
+  await User.findOneAndUpdate(
+    { discordId },
+    { $set: { subscriptionCancelAtPeriodEnd: cancelAtPeriodEnd } }
+  );
+}
+
+/** Active subscribers whose paid window has ended (for scheduled expiry). */
 export async function listUsersWithExpiredSubscription(): Promise<
   Array<{
     discordId: string;
@@ -173,7 +226,7 @@ export async function listUsersWithExpiredSubscription(): Promise<
   if (!(await connectMongo())) return [];
 
   const rows = await User.find({
-    paymentStatus: { $in: ["active", "manual_active"] },
+    paymentStatus: { $in: ["active", "manual_active", "past_due"] },
     subscriptionCurrentPeriodEnd: { $exists: true, $lte: new Date() },
   })
     .select("discordId subscriptionCurrentPeriodEnd paymentStatus")
@@ -186,7 +239,7 @@ export async function listUsersWithExpiredSubscription(): Promise<
   }));
 }
 
-export async function revokeOvgcSubscription(discordId: string): Promise<void> {
+export async function revokeSubscriptionAccess(discordId: string): Promise<void> {
   if (!(await connectMongo())) return;
 
   await User.findOneAndUpdate(
@@ -196,12 +249,14 @@ export async function revokeOvgcSubscription(discordId: string): Promise<void> {
         paymentStatus: "canceled",
         subscriptionSource: "none",
         discordHasPaidRole: false,
+        subscriptionCancelAtPeriodEnd: false,
       },
       $unset: {
         subscriptionCurrentPeriodEnd: "",
         subscriptionExternalId: "",
-        pendingOvgcSessionId: "",
-        pendingOvgcTransactionId: "",
+        stripeSubscriptionId: "",
+        pendingCheckoutOrderUuid: "",
+        pendingCheckoutSessionId: "",
       },
     }
   );

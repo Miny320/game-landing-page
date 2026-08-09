@@ -10,11 +10,14 @@ const checkoutStatusValues = [
 const checkoutPendingSchema = new Schema(
   {
     orderUuid: { type: String, required: true, unique: true, index: true },
+    /** Stripe Checkout Session id (`cs_...`) for this attempt. */
     transactionId: { type: String, required: true, index: true },
-    /** Session id from hosted checkout URL (/checkout/{id}). */
+    /** Same Stripe Checkout Session id, kept for lookups by session. */
     checkoutSessionId: { type: String, index: true },
-    /** Extra ids (e.g. invoice_*) returned by OVGC after capture. */
+    /** Related Stripe ids (subscription, invoice, customer) learned from webhooks. */
     alternateIds: { type: [String], default: [], index: true },
+    stripeCustomerId: { type: String, index: true },
+    stripeSubscriptionId: { type: String, index: true },
     email: { type: String, required: true, index: true },
     discordId: { type: String, index: true },
     status: {

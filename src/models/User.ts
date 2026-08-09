@@ -8,7 +8,8 @@ const paymentStatusValues = [
   "canceled",
 ] as const;
 
-const subscriptionSourceValues = ["none", "manual_hub", "ovgc"] as const;
+/** "ovgc" is retained so subscribers from the previous processor stay valid. */
+const subscriptionSourceValues = ["none", "manual_hub", "stripe", "ovgc"] as const;
 
 const userSchema = new Schema(
   {
@@ -32,12 +33,18 @@ const userSchema = new Schema(
       enum: subscriptionSourceValues,
       default: "none",
     },
-    /** Optional external id when OVGC / other billing is wired. */
+    /** Stripe subscription id (or the legacy processor's transaction id on old rows). */
     subscriptionExternalId: { type: String },
-    /** Our order_uuid sent when creating the payment request. */
-    pendingOvgcSessionId: { type: String },
-    /** OVGC transaction_id returned from payment-request-api (used by webhooks). */
-    pendingOvgcTransactionId: { type: String, index: true },
+    /** Stripe customer id — reused across checkouts and required by the billing portal. */
+    stripeCustomerId: { type: String, index: true },
+    /** Stripe subscription id, used to resolve renewal and cancellation webhooks. */
+    stripeSubscriptionId: { type: String, index: true },
+    /** True when the subscriber cancelled but the paid period has not ended yet. */
+    subscriptionCancelAtPeriodEnd: { type: Boolean, default: false },
+    /** Our order_uuid for the checkout currently in flight. */
+    pendingCheckoutOrderUuid: { type: String },
+    /** Stripe Checkout Session id for the checkout currently in flight. */
+    pendingCheckoutSessionId: { type: String, index: true },
   },
   { timestamps: true }
 );

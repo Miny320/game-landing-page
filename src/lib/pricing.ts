@@ -1,22 +1,23 @@
 import {
-  getOvgcProductTitle,
-  getOvgcSubscriptionAmountCents,
-} from "@/lib/ovgc-config";
+  getSubscriptionAmountCents,
+  getSubscriptionCurrency,
+  getSubscriptionProductName,
+} from "@/lib/stripe-config";
 
 export function formatSubscriptionPrice(): string {
-  const cents = getOvgcSubscriptionAmountCents();
-  const dollars = cents / 100;
-  const wholeDollars = cents % 100 === 0;
+  const cents = getSubscriptionAmountCents();
+  const amount = cents / 100;
+  const wholeUnits = cents % 100 === 0;
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
-    minimumFractionDigits: wholeDollars ? 0 : 2,
-    maximumFractionDigits: wholeDollars ? 0 : 2,
-  }).format(dollars);
+    currency: getSubscriptionCurrency().toUpperCase(),
+    minimumFractionDigits: wholeUnits ? 0 : 2,
+    maximumFractionDigits: wholeUnits ? 0 : 2,
+  }).format(amount);
 }
 
 export function getSubscriptionProductTitle(): string {
-  return getOvgcProductTitle();
+  return getSubscriptionProductName();
 }
 
 export const ULTIMATE_FEATURES = [
@@ -24,7 +25,7 @@ export const ULTIMATE_FEATURES = [
   "New Ultimate scripts added weekly",
   "24/7 Discord support & setup guides",
   "Paid User role applied automatically after payment",
-  "Secure OVGC checkout — cancel anytime",
+  "Secure Stripe checkout — cancel anytime",
 ] as const;
 
 export const ULTIMATE_PREVIEW_SCRIPTS = [

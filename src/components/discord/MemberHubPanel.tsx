@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Circle,
+  CreditCard,
   ExternalLink,
   Loader2,
   RefreshCw,
@@ -19,7 +20,7 @@ import {
   claimPaidRoleFromSubscribeButton,
   refreshDiscordHub,
 } from "@/actions/discord-hub";
-import { startOvgcCheckout } from "@/actions/ovgc-checkout";
+import { startStripeCheckout } from "@/actions/stripe-checkout";
 import type { DiscordAccessSnapshot } from "@/lib/discord-guild";
 
 const memberHubHexCtaClassName =
@@ -29,8 +30,8 @@ type Props = {
   userName?: string | null;
   snapshot: DiscordAccessSnapshot;
   inviteUrl: string | null;
-  /** When true, Subscribe opens OVGC hosted checkout. */
-  ovgcCheckoutEnabled: boolean;
+  /** When true, Subscribe opens Stripe hosted checkout. */
+  stripeCheckoutEnabled: boolean;
   /** When true, “Subscribe for full access” assigns the Paid User role (dev / fallback). */
   manualSubscribeGrantEnabled: boolean;
   /** ISO end of current monthly period (httpOnly cookie; set on hub subscribe / renew). */
@@ -41,6 +42,11 @@ type Props = {
   /** True when a User document exists for this Discord id. */
   accountPersisted: boolean;
   billingSuccess?: boolean;
+  /** True when the account has a Stripe customer, so the billing portal can open. */
+  canManageBilling?: boolean;
+  /** Subscriber cancelled but the paid period has not ended yet. */
+  cancelAtPeriodEnd?: boolean;
+  billingError?: string | null;
 };
 
 function StepRow({
@@ -75,13 +81,16 @@ export function MemberHubPanel({
   userName,
   snapshot,
   inviteUrl,
-  ovgcCheckoutEnabled,
+  stripeCheckoutEnabled,
   manualSubscribeGrantEnabled,
   subscriptionPeriodEndIso,
   subscriptionPeriodExpired,
   paymentStatus,
   accountPersisted,
   billingSuccess,
+  canManageBilling = false,
+  cancelAtPeriodEnd = false,
+  billingError = null,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -99,10 +108,10 @@ export function MemberHubPanel({
     });
   };
 
-  const onOvgcCheckout = () => {
+  const onStripeCheckout = () => {
     setErr(null);
     startTransition(async () => {
-      const r = await startOvgcCheckout();
+      const r = await startStripeCheckout();
       if (!r.ok) {
         if (r.error === "invalid_email") {
           setErr(
@@ -191,13 +200,13 @@ export function MemberHubPanel({
   const needsSubscribe = inGuild && !hasPaidRole;
   const canExtendMonthlyPeriod =
     hasPaidRole &&
-    (ovgcCheckoutEnabled || manualSubscribeGrantEnabled) &&
+    (stripeCheckoutEnabled || manualSubscribeGrantEnabled) &&
     (!subscriptionPeriodEndIso || subscriptionPeriodExpired);
   const showSubscribePrimaryCta = needsSubscribe || canExtendMonthlyPeriod;
-  const useOvgcCheckout = ovgcCheckoutEnabled && showSubscribePrimaryCta;
-  const useManualGrant =
-    !ovgcCheckoutEnabled && manualSubscribeGrantEnabled && showSubscribePrimaryCta;
-  const onPrimarySubscribe = useOvgcCheckout ? onOvgcCheckout : onSubscribeForAccess;
+  const useStripeCheckout = stripeCheckoutEnabled && showSubscribePrimaryCta;
+  const onPrimarySubscribe = useStripeCheckout
+    ? onStripeCheckout
+    : onSubscribeForAccess;
 
   const periodEndDisplay = subscriptionPeriodEndIso
     ? new Date(subscriptionPeriodEndIso).toLocaleDateString(undefined, {
@@ -210,11 +219,13 @@ export function MemberHubPanel({
     : hasPaidRole
       ? subscriptionPeriodEndIso
         ? subscriptionPeriodExpired
-          ? `Paid User role is active. Your tracked monthly period ended on ${periodEndDisplay}. Use Extend monthly access on this page when available, or use checkout when live.`
-          : `You have the Paid User role. Current monthly access is tracked until ${periodEndDisplay}.`
-        : "You have the Paid User role. Full library access is tied to this subscription. Period dates appear after you use the hub subscribe flow (or when checkout is connected)."
-      : ovgcCheckoutEnabled
-        ? "You are in the server with free Discord access. Scripts require Ultimate — paid access uses OVGC checkout and adds the Paid User role."
+          ? `Paid User role is active, but your billing period ended on ${periodEndDisplay}. Start a new subscription below to restore full access.`
+          : cancelAtPeriodEnd
+            ? `You have the Paid User role. Your subscription is cancelled and access runs until ${periodEndDisplay}.`
+            : `You have the Paid User role. Your subscription renews automatically on ${periodEndDisplay}.`
+        : "You have the Paid User role. Full library access is tied to this subscription. Renewal dates appear once a Stripe subscription is active."
+      : stripeCheckoutEnabled
+        ? "You are in the server with free Discord access. Scripts require Ultimate — paid access uses Stripe checkout and adds the Paid User role."
         : manualSubscribeGrantEnabled
           ? "You are in the server with free Discord access. Scripts require Ultimate (dev mode can assign the paid role without payment)."
           : "You are in the server with free Discord access. Scripts require Ultimate when billing is enabled.";
@@ -325,23 +336,34 @@ export function MemberHubPanel({
                 <CalendarDays className="size-5 shrink-0" aria-hidden />
                 <div>
                   <p className="font-rajdhani text-[10px] font-black uppercase tracking-[0.2em] opacity-90">
-                    {subscriptionPeriodExpired ? "Period ended" : "Monthly access until"}
+                    {subscriptionPeriodExpired
+                      ? "Period ended"
+                      : cancelAtPeriodEnd
+                        ? "Access until"
+                        : "Renews on"}
                   </p>
                   <p className="mt-1 font-rajdhani text-lg font-bold text-white">
                     {periodEndDisplay}
                   </p>
-                  {subscriptionPeriodExpired && manualSubscribeGrantEnabled ? (
+                  {subscriptionPeriodExpired ? (
                     <p className="mt-2 text-xs text-gray-400 leading-relaxed">
-                      Use <strong className="text-white">Extend monthly access</strong> below to
-                      start a new monthly window (same Discord role).
+                      Start a new subscription below to restore access.
                     </p>
-                  ) : null}
+                  ) : cancelAtPeriodEnd ? (
+                    <p className="mt-2 text-xs text-gray-400 leading-relaxed">
+                      Your subscription is cancelled and will not renew. You keep access until
+                      this date.
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-gray-400 leading-relaxed">
+                      Billed monthly by Stripe. Cancel anytime from Manage billing.
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (
               <p className="mt-4 text-xs text-gray-500 leading-relaxed">
-                A renewal date will show here after you subscribe through this hub, or when billing
-                is connected.
+                A renewal date will show here once your Stripe subscription is active.
               </p>
             )}
           </div>
@@ -361,7 +383,7 @@ export function MemberHubPanel({
                 ) : (
                   <Unlock className="size-4" aria-hidden />
                 )}
-                Extend monthly access
+                {useStripeCheckout ? "Renew subscription" : "Extend monthly access"}
               </button>
               {inviteUrl ? (
                 <a
@@ -416,6 +438,16 @@ export function MemberHubPanel({
             {inGuild ? "Refresh status" : "I joined — refresh status"}
           </button>
 
+          {canManageBilling ? (
+            <a
+              href="/api/billing/portal"
+              className="inline-flex items-center justify-center gap-2 border border-white/20 bg-white/5 px-6 py-3.5 font-rajdhani text-sm font-bold uppercase tracking-widest text-white transition hover:bg-white/10"
+            >
+              <CreditCard className="size-4" aria-hidden />
+              Manage billing
+            </a>
+          ) : null}
+
           <Link
             href="/"
             className="inline-flex items-center justify-center text-sm font-rajdhani font-bold uppercase tracking-widest text-gray-500 transition hover:text-cyan-accent sm:ml-auto"
@@ -423,6 +455,12 @@ export function MemberHubPanel({
             ← Back to site
           </Link>
         </div>
+
+        {billingError ? (
+          <p className="mt-4 text-sm text-amber-200/90" role="alert">
+            {billingError}
+          </p>
+        ) : null}
 
         {err ? (
           <p className="mt-4 text-sm text-red-300" role="alert">

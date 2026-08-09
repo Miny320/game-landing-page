@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { tryFulfillPendingOvgcForDiscord } from "@/lib/ovgc-fulfillment";
+import { tryFulfillPendingStripeForDiscord } from "@/lib/stripe-fulfillment";
 import { getUserByDiscordId } from "@/lib/user-db";
+import { isPaidCheckoutSource } from "@/lib/subscription-source";
 
-/** Legacy OVGC success URL — forwards to public billing success when order_uuid is present. */
+/** Legacy success URL — forwards to public billing success when order_uuid is present. */
 export default async function BillingSuccessPage({
   searchParams,
 }: {
@@ -34,17 +35,23 @@ export default async function BillingSuccessPage({
   }
 
   let user = await getUserByDiscordId(discordId);
-  if (user?.paymentStatus === "active" && user.subscriptionSource === "ovgc") {
+  if (
+    user?.paymentStatus === "active" &&
+    isPaidCheckoutSource(user.subscriptionSource)
+  ) {
     redirect("/dashboard?billing=success");
   }
 
-  const backup = await tryFulfillPendingOvgcForDiscord(discordId, orderUuid);
+  const backup = await tryFulfillPendingStripeForDiscord(discordId, orderUuid);
   if (backup.ok) {
     redirect("/dashboard?billing=success");
   }
 
   user = await getUserByDiscordId(discordId);
-  if (user?.paymentStatus === "active" && user.subscriptionSource === "ovgc") {
+  if (
+    user?.paymentStatus === "active" &&
+    isPaidCheckoutSource(user.subscriptionSource)
+  ) {
     redirect("/dashboard?billing=success");
   }
 
@@ -52,7 +59,7 @@ export default async function BillingSuccessPage({
     <BillingShell>
       <BillingMessage
         title="Payment received"
-        body="Thanks for subscribing. OVGC is confirming your payment via webhook — your Paid User role is applied automatically within a minute. Open your member hub and use Refresh status if needed."
+        body="Thanks for subscribing. Stripe is confirming your payment via webhook — your Paid User role is applied automatically within a minute. Open your member hub and use Refresh status if needed."
         variant="pending"
         showDashboardLink
       />

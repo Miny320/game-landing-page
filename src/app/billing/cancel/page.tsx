@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { markCheckoutPendingCanceled } from "@/lib/checkout-pending-db";
-import { clearPendingOvgcSession } from "@/lib/user-db";
+import { clearPendingCheckoutSession } from "@/lib/user-db";
 
 export default async function BillingCancelPage({
   searchParams,
@@ -17,7 +17,7 @@ export default async function BillingCancelPage({
   const session = await auth();
   const discordId = session?.user?.discordId;
   if (discordId) {
-    await clearPendingOvgcSession(discordId);
+    await clearPendingCheckoutSession(discordId);
   }
 
   return (

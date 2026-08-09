@@ -8,6 +8,8 @@ export async function createCheckoutPending(data: {
   discordId?: string;
   checkoutSessionId?: string;
   invoiceId?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }) {
   if (!(await connectMongo())) return null;
 
@@ -16,6 +18,7 @@ export async function createCheckoutPending(data: {
     data.transactionId,
     data.checkoutSessionId,
     data.invoiceId,
+    data.stripeSubscriptionId,
   ].filter((id): id is string => Boolean(id?.trim()));
 
   return CheckoutPending.findOneAndUpdate(
@@ -28,12 +31,48 @@ export async function createCheckoutPending(data: {
         ...(data.checkoutSessionId
           ? { checkoutSessionId: data.checkoutSessionId }
           : {}),
+        ...(data.stripeCustomerId
+          ? { stripeCustomerId: data.stripeCustomerId }
+          : {}),
+        ...(data.stripeSubscriptionId
+          ? { stripeSubscriptionId: data.stripeSubscriptionId }
+          : {}),
         status: "pending",
       },
       $setOnInsert: { orderUuid: data.orderUuid },
       $addToSet: { alternateIds: { $each: [...new Set(alternateIds)] } },
     },
     { upsert: true, new: true }
+  ).lean();
+}
+
+/** Attach Stripe ids learned from a webhook so later events resolve to this order. */
+export async function attachStripeRefsToCheckout(
+  orderUuid: string,
+  refs: { stripeCustomerId?: string | null; stripeSubscriptionId?: string | null }
+) {
+  if (!(await connectMongo())) return null;
+
+  const customerId = refs.stripeCustomerId?.trim();
+  const subscriptionId = refs.stripeSubscriptionId?.trim();
+  if (!customerId && !subscriptionId) return null;
+
+  return CheckoutPending.findOneAndUpdate(
+    { orderUuid: orderUuid.trim() },
+    {
+      $set: {
+        ...(customerId ? { stripeCustomerId: customerId } : {}),
+        ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+      },
+      $addToSet: {
+        alternateIds: {
+          $each: [customerId, subscriptionId].filter(
+            (id): id is string => Boolean(id)
+          ),
+        },
+      },
+    },
+    { new: true }
   ).lean();
 }
 
@@ -83,11 +122,13 @@ export async function getCheckoutPendingByEmail(email: string) {
     .lean();
 }
 
-/** Match webhook ids against stored checkout / invoice / order references. */
+/** Match webhook ids against stored checkout / subscription / order references. */
 export async function resolveCheckoutPendingFromWebhookRefs(refs: {
   ids?: string[];
   orderUuid?: string | null;
   email?: string | null;
+  /** Broad fallback — only used after every precise id has missed. */
+  stripeCustomerId?: string | null;
 }) {
   if (!(await connectMongo())) return null;
 
@@ -97,6 +138,7 @@ export async function resolveCheckoutPendingFromWebhookRefs(refs: {
       $or: [
         { transactionId: { $in: ids } },
         { checkoutSessionId: { $in: ids } },
+        { stripeSubscriptionId: { $in: ids } },
         { alternateIds: { $in: ids } },
       ],
     })
@@ -111,27 +153,21 @@ export async function resolveCheckoutPendingFromWebhookRefs(refs: {
     if (byOrder) return byOrder;
   }
 
+  const customerId = refs.stripeCustomerId?.trim();
+  if (customerId) {
+    const byCustomer = await CheckoutPending.findOne({
+      stripeCustomerId: customerId,
+    })
+      .sort({ updatedAt: -1 })
+      .lean();
+    if (byCustomer) return byCustomer;
+  }
+
   if (refs.email) {
     return getCheckoutPendingByEmail(refs.email);
   }
 
   return null;
-}
-
-export async function markCheckoutPendingPaid(transactionId: string) {
-  if (!(await connectMongo())) return;
-  const id = transactionId.trim();
-  await CheckoutPending.updateOne(
-    {
-      status: "pending",
-      $or: [
-        { transactionId: id },
-        { checkoutSessionId: id },
-        { alternateIds: id },
-      ],
-    },
-    { $set: { status: "paid" } }
-  );
 }
 
 export async function markCheckoutPendingPaidByOrderUuid(orderUuid: string) {

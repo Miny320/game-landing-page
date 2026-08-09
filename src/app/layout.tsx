@@ -26,12 +26,6 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <head>
         <link rel="preload" as="video" href="/visuals/animation.mp4" type="video/mp4" />
-        {/* OVG Payments domain verification — inline so it runs on first paint */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){var i=new Image();i.src="https://billing.ovgcpayments.com/backend/api/vpx?t=b1d3fc562a5735de1b15adcf3a6e8b50e357615c&d="+encodeURIComponent(location.hostname)+"&r="+Date.now();})();`,
-          }}
-        />
       </head>
       <body className="font-sans antialiased bg-background text-white min-h-screen flex flex-col relative">
         <ParticleBackground />

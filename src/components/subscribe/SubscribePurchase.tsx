@@ -114,7 +114,7 @@ export function SubscribePurchase({
         ) : null}
 
         <p className="font-sans text-xs text-gray-500 leading-relaxed">
-          Secure OVGC checkout on the next page. Instant server activation — no extra steps.
+          Secure Stripe checkout on the next page. Billed monthly, cancel anytime.
         </p>
       </div>
     );

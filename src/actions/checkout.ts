@@ -2,9 +2,9 @@
 
 import { auth } from "@/auth";
 import {
-  startOvgcCheckoutForSession,
-  startOvgcCheckoutWithEmail,
-} from "@/lib/ovgc-checkout-start";
+  startStripeCheckoutForSession,
+  startStripeCheckoutWithEmail,
+} from "@/lib/stripe-checkout-start";
 
 export type CheckoutActionResult =
   | { ok: true; checkoutUrl: string; linkedDiscord: boolean }
@@ -21,12 +21,12 @@ export async function startGuestCheckout(email: string): Promise<CheckoutActionR
   if (discordId) {
     const receiptEmail = email.trim() || session.user?.email?.trim() || "";
     const result = receiptEmail
-      ? await startOvgcCheckoutWithEmail(receiptEmail, {
+      ? await startStripeCheckoutWithEmail(receiptEmail, {
           discordId,
           discordName: session.user?.name ?? undefined,
           discordImage: session.user?.image ?? undefined,
         })
-      : await startOvgcCheckoutForSession(session);
+      : await startStripeCheckoutForSession(session);
 
     if (!result.ok) {
       return {
@@ -46,7 +46,7 @@ export async function startGuestCheckout(email: string): Promise<CheckoutActionR
     };
   }
 
-  const result = await startOvgcCheckoutWithEmail(trimmed);
+  const result = await startStripeCheckoutWithEmail(trimmed);
   if (!result.ok) {
     return {
       ok: false,

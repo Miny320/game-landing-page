@@ -6,7 +6,7 @@ import {
   getDiscordInviteUrl,
   isManualSubscribeGrantEnabled,
 } from "@/lib/discord-config";
-import { isOvgcConfigured } from "@/lib/ovgc-config";
+import { isStripeConfigured } from "@/lib/stripe-config";
 import {
   getEffectiveSubscriptionPeriodEnd,
   getUserByDiscordId,
@@ -17,9 +17,9 @@ import { tryFulfillPaidCheckoutForDiscord } from "@/lib/checkout-fulfillment";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ billing?: string }>;
+  searchParams: Promise<{ billing?: string; billing_error?: string }>;
 }) {
-  const { billing } = await searchParams;
+  const { billing, billing_error: billingError } = await searchParams;
   const session = await auth();
   if (!session?.user) {
     return null;
@@ -60,7 +60,7 @@ export default async function DashboardPage({
   }
 
   const inviteUrl = getDiscordInviteUrl();
-  const ovgcCheckoutEnabled = isOvgcConfigured();
+  const stripeCheckoutEnabled = isStripeConfigured();
   const manualSubscribeGrantEnabled = isManualSubscribeGrantEnabled();
   const periodEnd = await getEffectiveSubscriptionPeriodEnd(discordId);
   const subscriptionPeriodEndIso = periodEnd?.toISOString() ?? null;
@@ -72,6 +72,10 @@ export default async function DashboardPage({
   const dbUser = await getUserByDiscordId(discordId);
   const paymentStatus = dbUser?.paymentStatus ?? null;
   const accountPersisted = dbUser != null;
+  // Only subscribers with a Stripe customer can open the billing portal.
+  const canManageBilling =
+    stripeCheckoutEnabled && Boolean(dbUser?.stripeCustomerId?.trim());
+  const cancelAtPeriodEnd = Boolean(dbUser?.subscriptionCancelAtPeriodEnd);
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pt-28 pb-24 md:pt-32">
@@ -79,13 +83,16 @@ export default async function DashboardPage({
         userName={session.user.name}
         snapshot={snapshot}
         inviteUrl={inviteUrl}
-        ovgcCheckoutEnabled={ovgcCheckoutEnabled}
+        stripeCheckoutEnabled={stripeCheckoutEnabled}
         manualSubscribeGrantEnabled={manualSubscribeGrantEnabled}
         subscriptionPeriodEndIso={subscriptionPeriodEndIso}
         subscriptionPeriodExpired={subscriptionPeriodExpired}
         paymentStatus={paymentStatus}
         accountPersisted={accountPersisted}
         billingSuccess={billing === "success"}
+        canManageBilling={canManageBilling}
+        cancelAtPeriodEnd={cancelAtPeriodEnd}
+        billingError={billingError ? decodeURIComponent(billingError) : null}
       />
     </div>
   );

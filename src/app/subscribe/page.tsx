@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { Suspense } from "react";
 import { SubscribeProductStatic } from "@/components/subscribe/SubscribeProduct";
-import { isOvgcConfigured } from "@/lib/ovgc-config";
+import { isStripeConfigured } from "@/lib/stripe-config";
 import Link from "next/link";
 
 export const metadata = {
@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default async function SubscribePage() {
-  const checkoutReady = isOvgcConfigured();
+  const checkoutReady = isStripeConfigured();
   const session = await auth();
   const defaultEmail = session?.user?.email?.trim() ?? "";
   const signedInWithDiscord = Boolean(session?.user?.discordId);
@@ -27,7 +27,7 @@ export default async function SubscribePage() {
               Checkout not configured
             </p>
             <p className="mt-2 text-sm text-gray-300">
-              OVGC billing is not set up on this environment yet.
+              Stripe billing is not set up on this environment yet.
             </p>
           </div>
         </div>

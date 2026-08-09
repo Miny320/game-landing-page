@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { startOvgcCheckoutForSession } from "@/lib/ovgc-checkout-start";
-import { getAppBaseUrl, isOvgcConfigured } from "@/lib/ovgc-config";
+import { startStripeCheckoutForSession } from "@/lib/stripe-checkout-start";
+import { getAppBaseUrl, isStripeConfigured } from "@/lib/stripe-config";
 
-/** One-click checkout when Discord session already has an email (skips /checkout page). */
+/** One-click checkout when the Discord session already has an email (skips /checkout page). */
 export async function GET() {
   const base = getAppBaseUrl();
 
-  if (!isOvgcConfigured()) {
+  if (!isStripeConfigured()) {
     return NextResponse.redirect(new URL("/subscribe", base));
   }
 
@@ -16,7 +16,7 @@ export async function GET() {
     return NextResponse.redirect(new URL("/subscribe#purchase", base));
   }
 
-  const result = await startOvgcCheckoutForSession(session);
+  const result = await startStripeCheckoutForSession(session);
   if (result.ok) {
     return NextResponse.redirect(result.checkoutUrl);
   }

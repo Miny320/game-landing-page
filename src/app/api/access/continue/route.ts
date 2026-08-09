@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { tryFulfillCheckoutOrderForDiscord } from "@/lib/checkout-fulfillment";
 import { isUserInGuild } from "@/lib/discord-join";
-import { startOvgcCheckoutForSession } from "@/lib/ovgc-checkout-start";
+import { startStripeCheckoutForSession } from "@/lib/stripe-checkout-start";
 import { isManualSubscribeGrantEnabled } from "@/lib/discord-config";
-import { isOvgcConfigured } from "@/lib/ovgc-config";
+import { getAppBaseUrl, isStripeConfigured } from "@/lib/stripe-config";
 import { claimPaidRoleFromSubscribeButton } from "@/actions/discord-hub";
-import { getAppBaseUrl } from "@/lib/ovgc-config";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -64,10 +63,10 @@ export async function GET(req: Request) {
   }
 
   if (intent === "checkout") {
-    if (!isOvgcConfigured()) {
+    if (!isStripeConfigured()) {
       return NextResponse.redirect(new URL("/subscribe", base));
     }
-    const checkout = await startOvgcCheckoutForSession(session);
+    const checkout = await startStripeCheckoutForSession(session);
     if (checkout.ok) {
       return NextResponse.redirect(checkout.checkoutUrl);
     }
@@ -76,8 +75,8 @@ export async function GET(req: Request) {
   }
 
   if (intent === "upgrade_legacy") {
-    if (isOvgcConfigured()) {
-      const checkout = await startOvgcCheckoutForSession(session);
+    if (isStripeConfigured()) {
+      const checkout = await startStripeCheckoutForSession(session);
       if (checkout.ok) {
         return NextResponse.redirect(checkout.checkoutUrl);
       }
