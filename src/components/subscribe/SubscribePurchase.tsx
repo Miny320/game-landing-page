@@ -177,7 +177,7 @@ export function SubscribePurchase({
         </p>
         <form action={signInWithDiscordForSubscribe} className="w-full">
           <HexPrimaryCtaButton type="submit" block>
-            Connect Discord, then purchase
+            <span className="whitespace-nowrap">Connect Discord</span>
           </HexPrimaryCtaButton>
         </form>
       </div>

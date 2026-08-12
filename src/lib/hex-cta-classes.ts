@@ -1,9 +1,12 @@
 /** Primary filled hex CTA — styles in globals.css (`.hex-cta-primary`). */
 export const HEX_CTA_CLASS = "hex-cta-primary";
 
-/** Label wrapper so text sits above pseudo-element backgrounds. */
-export const HEX_CTA_LABEL_CLASS =
-  "hex-cta-primary__label whitespace-nowrap";
+/**
+ * Label wrapper so text sits above pseudo-element backgrounds.
+ * Deliberately wrappable — call sites keep individual phrases together with their own
+ * `whitespace-nowrap` span, so a long label wraps instead of spilling out of the hex.
+ */
+export const HEX_CTA_LABEL_CLASS = "hex-cta-primary__label";
 
 /** Center the hex in a full-width row (restores previous max-w-xl width). */
 export const HEX_CTA_CENTER_ROW = "hex-cta-primary__row";

@@ -32,7 +32,9 @@ export function SubscribeProduct({
       </h1>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_320px] lg:items-start">
-        <div className="space-y-8">
+        {/* min-w-0: a grid item defaults to min-width:auto and would otherwise stretch to the
+            preview row's min-content width (~920px), pushing the page off-screen on mobile. */}
+        <div className="min-w-0 space-y-8">
           <p className="font-sans text-lg text-gray-400 leading-relaxed">
             One subscription unlocks the full Zen script library —{" "}
             <span className="font-bold text-white">200+ scripts</span> with more added frequently,

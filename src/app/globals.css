@@ -151,11 +151,14 @@ html.lenis {
   align-items: center;
   justify-content: center;
   margin: 0;
-  padding: 0 2rem;
+  /* Must clear the 6% angled points at each end; shrinks on narrow buttons so long
+     labels keep room instead of spilling outside the hex. */
+  padding: 0 clamp(1.25rem, 9%, 2rem);
   appearance: none;
   -webkit-appearance: none;
   box-sizing: border-box;
-  height: 52px;
+  /* Grows instead of letting the label overflow into the dark page background. */
+  min-height: 52px;
   width: auto;
   min-width: var(--hex-w);
   max-width: 100%;
@@ -210,7 +213,15 @@ html.lenis {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  /* Allow the label to wrap rather than overflow: the text is near-black, so anything
+     outside the cyan hex is invisible against the page. */
+  min-width: 0;
+  padding-block: 0.5rem;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
   pointer-events: none;
 }
 
