@@ -40,6 +40,23 @@ export function getSubscriptionProductName(): string {
   );
 }
 
+/**
+ * Product tax code (`txcd_...`) applied to the inline price.
+ * Managed Payments rejects line items without one. See https://docs.stripe.com/tax/tax-categories
+ */
+export function getStripeTaxCode(): string | null {
+  return process.env.STRIPE_TAX_CODE?.trim() || null;
+}
+
+/**
+ * Stripe's merchant-of-record product, which handles sales tax/VAT for you.
+ * Off unless explicitly enabled: it requires a product tax code on every line item,
+ * and it is not how this store billed before.
+ */
+export function isManagedPaymentsEnabled(): boolean {
+  return process.env.STRIPE_MANAGED_PAYMENTS?.trim().toLowerCase() === "true";
+}
+
 /** Optional Billing Portal configuration id (`bpc_...`) for the manage-subscription link. */
 export function getStripePortalConfigurationId(): string | null {
   return process.env.STRIPE_PORTAL_CONFIGURATION_ID?.trim() || null;

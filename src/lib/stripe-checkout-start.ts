@@ -86,9 +86,18 @@ export async function startStripeCheckoutWithEmail(
 
     return { ok: true, checkoutUrl: url, orderUuid };
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "Could not start Stripe checkout";
-    return { ok: false, error: "checkout_error", message };
+    // Stripe errors name internal config (tax codes, API params) — log them, never show them.
+    console.error("[stripe checkout] session create failed:", {
+      orderUuid,
+      email,
+      error: e instanceof Error ? e.message : e,
+    });
+    return {
+      ok: false,
+      error: "checkout_error",
+      message:
+        "We could not start checkout right now. Please try again in a moment, or contact support if it keeps happening.",
+    };
   }
 }
 

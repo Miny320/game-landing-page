@@ -3,9 +3,11 @@ import {
   getStripePortalConfigurationId,
   getStripePriceId,
   getStripeSecretKey,
+  getStripeTaxCode,
   getSubscriptionAmountCents,
   getSubscriptionCurrency,
   getSubscriptionProductName,
+  isManagedPaymentsEnabled,
 } from "@/lib/stripe-config";
 
 let cached: Stripe | null = null;
@@ -89,6 +91,9 @@ function buildLineItems(): Stripe.Checkout.SessionCreateParams.LineItem[] {
     return [{ price: priceId, quantity: 1 }];
   }
 
+  // Managed Payments rejects a line item whose product has no tax code.
+  const taxCode = getStripeTaxCode();
+
   return [
     {
       quantity: 1,
@@ -96,7 +101,10 @@ function buildLineItems(): Stripe.Checkout.SessionCreateParams.LineItem[] {
         currency: getSubscriptionCurrency(),
         unit_amount: getSubscriptionAmountCents(),
         recurring: { interval: "month" },
-        product_data: { name: getSubscriptionProductName() },
+        product_data: {
+          name: getSubscriptionProductName(),
+          ...(taxCode ? { tax_code: taxCode } : {}),
+        },
       },
     },
   ];
@@ -134,6 +142,11 @@ export async function createStripeCheckoutSession(input: {
       // Copied onto the Subscription so renewal webhooks can resolve the Discord account.
       subscription_data: { metadata },
       allow_promotion_codes: true,
+      // Accounts with Managed Payments on by default reject line items that carry no
+      // product tax code, which would fail every checkout. Opt in explicitly instead.
+      ...(isManagedPaymentsEnabled()
+        ? {}
+        : { managed_payments: { enabled: false } }),
       ...(input.customerId
         ? { customer: input.customerId, customer_update: { address: "auto" } }
         : { customer_email: input.email }),
