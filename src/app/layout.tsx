@@ -24,9 +24,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <head>
-        <link rel="preload" as="video" href="/visuals/animation.mp4" type="video/mp4" />
-      </head>
       <body className="font-sans antialiased bg-background text-white min-h-screen flex flex-col relative">
         <ParticleBackground />
         {/* Background Effects */}
